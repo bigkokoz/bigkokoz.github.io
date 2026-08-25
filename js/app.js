@@ -83,11 +83,19 @@
     }
 
     projects.forEach(function (project) {
-      const card = document.createElement('div');
+      const externalUrl = project.links && project.links[0] && project.links[0].url;
+      const card = document.createElement(externalUrl ? 'a' : 'div');
       card.className = 'card';
-      card.setAttribute('role', 'button');
-      card.setAttribute('tabindex', '0');
-      card.setAttribute('aria-label', 'Ver proyecto: ' + project.title);
+      if (externalUrl) {
+        card.href = externalUrl;
+        card.target = '_blank';
+        card.rel = 'noopener noreferrer';
+        card.setAttribute('aria-label', 'Abrir proyecto: ' + project.title);
+      } else {
+        card.setAttribute('role', 'button');
+        card.setAttribute('tabindex', '0');
+        card.setAttribute('aria-label', 'Ver proyecto: ' + project.title);
+      }
 
       const mediaWrap = document.createElement('div');
       buildMedia(project, project.thumb, project.title, mediaWrap);
@@ -106,19 +114,22 @@
 
       const cta = document.createElement('span');
       cta.className = 'card-cta';
-      cta.textContent = 'Ver proyecto →';
+      cta.textContent = externalUrl ? 'Abrir proyecto →' : 'Ver detalle →';
       body.appendChild(cta);
 
       card.appendChild(body);
-      card.addEventListener('click', function () {
-        openProject(project.id);
-      });
-      card.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
+
+      if (!externalUrl) {
+        card.addEventListener('click', function () {
           openProject(project.id);
-        }
-      });
+        });
+        card.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openProject(project.id);
+          }
+        });
+      }
 
       gridEl.appendChild(card);
     });

@@ -33,8 +33,8 @@
       "year": 2026,
       "tags": ["JavaScript", "Juego educativo"],
       "role": "Diseño y desarrollo",
-      "thumb": "",
-      "hero": "",
+      "thumb": "assets/projects/aves-de-chile/thumb.png",
+      "hero": "assets/projects/aves-de-chile/hero.png",
       "links": [{ "label": "Ver proyecto", "url": "https://bigkokoz.github.io/Aves-de-Chile/" }]
     },
     {
@@ -48,8 +48,8 @@
       "year": 2026,
       "tags": ["p5.js", "Web Audio API"],
       "role": "Diseño y desarrollo",
-      "thumb": "",
-      "hero": "",
+      "thumb": "assets/projects/pruebas-de-audio/thumb.png",
+      "hero": "assets/projects/pruebas-de-audio/hero.png",
       "links": [{ "label": "Ver proyecto", "url": "https://bigkokoz.github.io/Pruebas-de-audio/" }]
     }
   ]
