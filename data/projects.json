@@ -9,7 +9,7 @@
   "projects": [
     {
       "id": "interfaz-impresora",
-      "order": 1,
+      "order": 2,
       "published": true,
       "title": "Interfaz impresora",
       "subtitle": "Diagrama de interacción",
@@ -24,7 +24,7 @@
     },
     {
       "id": "aves-de-chile",
-      "order": 2,
+      "order": 1,
       "published": true,
       "title": "Aves de Chile",
       "subtitle": "Aprende a reconocer aves chilenas",
