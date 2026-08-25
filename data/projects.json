@@ -23,34 +23,34 @@
       "links": []
     },
     {
-      "id": "proyecto-2",
+      "id": "aves-de-chile",
       "order": 2,
-      "published": false,
-      "title": "Proyecto 2",
-      "subtitle": "",
-      "cardExcerpt": "",
-      "description": "",
+      "published": true,
+      "title": "Aves de Chile",
+      "subtitle": "Aprende a reconocer aves chilenas",
+      "cardExcerpt": "Plataforma interactiva para identificar aves de Chile por su canto, apariencia y nombre.",
+      "description": "Sitio 100% estático (HTML, CSS, JS) para aprender a reconocer aves de Chile. Incluye modo estudio, un juego con puntaje por precisión, y un panel admin para cargar nuevas aves.",
       "year": 2026,
-      "tags": [],
-      "role": "",
+      "tags": ["JavaScript", "Juego educativo"],
+      "role": "Diseño y desarrollo",
       "thumb": "",
       "hero": "",
-      "links": []
+      "links": [{ "label": "Ver proyecto", "url": "https://bigkokoz.github.io/Aves-de-Chile/" }]
     },
     {
-      "id": "proyecto-3",
+      "id": "pruebas-de-audio",
       "order": 3,
-      "published": false,
-      "title": "Proyecto 3",
-      "subtitle": "",
-      "cardExcerpt": "",
-      "description": "",
+      "published": true,
+      "title": "Laboratorio de Micrófono",
+      "subtitle": "Experimentos con audio y voz",
+      "cardExcerpt": "Analizador de audio en vivo y dos juegos que responden a tu voz y tono.",
+      "description": "Experimentos interactivos con la Web Audio API y Web Speech API: un analizador de frecuencia y afinación en vivo, un juego de notas musicales, y un duelo de tanques controlado por voz.",
       "year": 2026,
-      "tags": [],
-      "role": "",
+      "tags": ["p5.js", "Web Audio API"],
+      "role": "Diseño y desarrollo",
       "thumb": "",
       "hero": "",
-      "links": []
+      "links": [{ "label": "Ver proyecto", "url": "https://bigkokoz.github.io/Pruebas-de-audio/" }]
     }
   ]
 }
