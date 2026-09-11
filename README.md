@@ -4,7 +4,7 @@ Portafolio estático de Jose (Taller Interfaces UAI). El sitio lee `data/project
 y renderiza la home y el detalle de cada proyecto — **no hay que tocar HTML** para
 agregar, editar u ocultar un proyecto.
 
-Sitio publicado: `https://bigkokoz.github.io/Taller-Interfaces-UAI/`
+Sitio publicado: `https://bigkokoz.github.io/`
 
 ## Estructura
 
@@ -93,13 +93,12 @@ color con las iniciales ("II") en vez de un ícono roto. Para agregar el
 diagrama real, sube el PNG a esa misma ruta (ver pasos arriba) — no hace
 falta tocar el JSON.
 
-## Activar GitHub Pages
+## GitHub Pages
 
-1. En el repo: **Settings → Pages**.
-2. En **Build and deployment → Source**, elige **Deploy from a branch**.
-3. Rama: `main`, carpeta: `/ (root)`. Guarda.
-4. Tras 1–2 minutos el sitio queda disponible en
-   `https://bigkokoz.github.io/Taller-Interfaces-UAI/`.
+Ya está activo (Settings → Pages → Deploy from a branch → `main` → `/root`).
+El repo se llama `bigkokoz.github.io`, así que Pages lo sirve como sitio de
+usuario, directo en la raíz: `https://bigkokoz.github.io/` (sin sufijo del
+nombre del repo). Cualquier commit a `main` se refleja ahí en 1–2 minutos.
 
 ## Desarrollo local
 
