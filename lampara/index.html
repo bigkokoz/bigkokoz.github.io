@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lámpara reactiva al sonido · José</title>
+<meta name="description" content="Torre de 9 LEDs que escucha el audio del computador y lo convierte en luz. Arduino Uno, impresión 3D y una app web.">
+<meta property="og:title" content="Lámpara reactiva al sonido">
+<meta property="og:description" content="Torre de 9 LEDs que escucha el audio del computador y lo convierte en luz.">
+<meta property="og:image" content="img/render_vistas.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/site.css">
+<style>
+  .hero-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:40px;align-items:center}
+  @media (max-width:900px){.hero-grid{grid-template-columns:minmax(0,1fr)}}
+  .flow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;align-items:stretch}
+  .flow .node{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;position:relative}
+  .flow .node b{display:block;font-size:.95rem;margin-bottom:4px}
+  .flow .node span{font-size:.84rem;color:var(--muted);display:block;line-height:1.45}
+  .flow .node .k{font:600 .7rem var(--mono);color:var(--accent);letter-spacing:.1em;display:block;margin-bottom:8px}
+  @media (max-width:900px){.flow{grid-template-columns:minmax(0,1fr)}}
+  .decision{display:grid;grid-template-columns:minmax(0,1fr);gap:4px;padding:18px 20px;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+  .decision b{font-size:.98rem}
+  .decision span{color:var(--muted);font-size:.9rem}
+  .pics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:16px}
+  .pics img{border-radius:10px;border:1px solid var(--line);aspect-ratio:4/5;object-fit:cover;width:100%;height:auto}
+  @media (max-width:700px){.pics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .wiring svg{width:100%;height:auto;display:block}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="../index.html"><span class="brand-dot"></span>José · Proyectos</a>
+    <nav class="nav">
+      <a href="index.html" aria-current="page">El proyecto</a>
+      <a href="app.html">App</a>
+      <a href="lamina.html">Lámina</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- =============================== HERO =============================== -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <p class="eyebrow">Taller de Interfaces · UAI · 2026</p>
+        <h1 style="margin-top:12px">Lámpara reactiva al sonido</h1>
+        <p class="lead">Una torre de 9 LEDs que escucha el audio del computador y lo convierte en luz. El computador analiza el sonido, el Arduino enciende los LEDs y una lámina impresa en 3D difumina la luz.</p>
+        <div class="btn-row" style="margin-top:26px">
+          <a class="btn primary" href="app.html">Abrir la app</a>
+          <a class="btn" href="lampara_archivos.zip" download>Descargar STL y STEP</a>
+          <a class="btn" href="lamina.html">Lámina y presentación</a>
+        </div>
+      </div>
+      <figure class="figure"><img src="img/render_hero.jpg" alt="Render de la lámpara armada y encendida" width="1400" height="1200"></figure>
+    </div>
+    <div class="wrap">
+      <dl class="hero-meta">
+        <div><dt>Encargo</dt><dd>Arduino + 8 LEDs que reaccionen al sonido</dd></div>
+        <div><dt>Resultado</dt><dd>9 LEDs WS2812B, 2 botones touch</dd></div>
+        <div><dt>Medidas</dt><dd>64 × 80 × 200 mm</dd></div>
+        <div><dt>Fabricación</dt><dd>PLA, 5 piezas, 4 h 20 min</dd></div>
+        <div><dt>Equipo</dt><dd>José, Pedro Claro, J. Domingo Pastorino</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- =============================== CÓMO FUNCIONA =============================== -->
+  <section class="section" id="funciona">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Cómo funciona</p>
+        <h2>El computador escucha, el Arduino ilumina</h2>
+        <p>La lámpara no tiene micrófono. El navegador escucha el micrófono o el audio que suena en el computador, lo analiza y le manda al Arduino el color de cada LED 30 veces por segundo.</p>
+      </div>
+      <div class="flow">
+        <div class="node"><span class="k">01 · ENTRADA</span><b>Audio</b><span>Micrófono o el audio del propio computador (música, video).</span></div>
+        <div class="node"><span class="k">02 · ANÁLISIS</span><b>Navegador</b><span>Web Audio mide el volumen, 9 bandas de frecuencia y los golpes del ritmo.</span></div>
+        <div class="node"><span class="k">03 · ENVÍO</span><b>USB serie</b><span>Web Serial manda un cuadro de 29 bytes con los 27 colores y un control de errores.</span></div>
+        <div class="node"><span class="k">04 · CONTROL</span><b>Arduino Uno</b><span>Muestra el cuadro. Si el computador se calla, sigue solo con sus propios modos.</span></div>
+        <div class="node"><span class="k">05 · SALIDA</span><b>9 LEDs + lámina</b><span>La lámina curva, a 20 mm de los LEDs, convierte los puntos en manchas suaves de luz.</span></div>
+      </div>
+      <div class="grid-2" style="margin-top:20px">
+        <div class="panel"><h3>De vuelta al computador</h3><p class="muted" style="margin-top:8px">Dos botones touch escondidos bajo 0,8 mm de PLA en la tapa superior. El Arduino reconoce toque, doble toque, mantener y los dos juntos, y le avisa a la app, que decide qué hace cada gesto.</p></div>
+        <div class="panel"><h3>Avisos de Claude</h3><p class="muted" style="margin-top:8px">Un script en Python conecta la lámpara con Claude Code: se pone ámbar cuando necesita una respuesta, azul mientras trabaja y verde cuando termina.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =============================== PROCESO =============================== -->
+  <section class="section" id="proceso">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Proceso</p>
+        <h2>De un boceto en la pizarra a una pieza impresa en una noche</h2>
+        <p>El proyecto se diseñó, se probó y se imprimió en menos de 24 horas. Cada versión respondió a una prueba concreta.</p>
+      </div>
+      <div class="timeline">
+        <div class="step"><span class="tag">01 · IDEA</span><div>
+          <h3>Bocetos de la torre</h3>
+          <p>El primer prototipo, modelado en Rhino, era una torre cilíndrica sobre una caja. A partir de él la planta pasó a un trapecio negro abierto adelante. La tira de LEDs va en la pared de atrás y una lámina blanca, impresa plana, se curva y engancha en ranuras en las esquinas. Todo se apoya en una base que esconde el Arduino.</p>
+          <div class="pics"><img src="img/boceto_planta.jpg" alt="Boceto en planta: trapecio azul, lámina naranja curva, LEDs verdes" loading="lazy"><img src="img/boceto_3d.jpg" alt="Boceto en perspectiva de la torre sobre la base" loading="lazy"><img src="img/prototipo_rhino.jpg" alt="Primer prototipo en Rhino: torre cilíndrica sobre una caja" loading="lazy"></div>
+        </div></div>
+        <div class="step"><span class="tag">02 · DECISIÓN</span><div>
+          <h3>Tira de 9 LEDs en vez de neón</h3>
+          <p>Se evaluaron tiras neón de 12 V con MOSFET y fuente externa. Se descartaron por tiempo y complejidad: la tira WS2812B funciona con los 5 V del USB, cada LED se controla por separado y basta un solo pin.</p>
+        </div></div>
+        <div class="step"><span class="tag">03 · VERSIÓN 1 → 2</span><div>
+          <h3>Torre más chica</h3>
+          <p>La primera torre medía 79 × 42 mm y se veía sobredimensionada. En la v2 la pared de atrás quedó del ancho de la tira (11 mm por dentro) y los brazos se acortaron. La torre pasó a 46 × 22 mm y la base a 64 × 80 mm, el mínimo para el Uno.</p>
+          <div class="grid-2" style="margin-top:14px"><figure class="figure"><img src="img/corte_torre.jpg" alt="Corte de la torre y vista de la tapa con los canales" loading="lazy"><figcaption>Corte de la torre v2 y canales de la tapa de la base.</figcaption></figure><figure class="figure"><img src="img/ajuste_uno.jpg" alt="Verificación del Arduino Uno dentro de la bandeja" loading="lazy"><figcaption>Verificación por computador: el Uno entra con 2,9 mm de holgura y el USB queda al ras.</figcaption></figure></div>
+        </div></div>
+        <div class="step"><span class="tag">04 · PRUEBA</span><div>
+          <h3>Un corte de 4 mm antes de imprimir todo</h3>
+          <p>Se imprimió un corte de la torre y una tira de lámina para comprobar que la lámina se curva sin trizarse y que se engancha en las ranuras. Funcionó al primer intento.</p>
+          <div class="pics"><img src="img/prueba_encaje.jpg" alt="Corte de prueba de la torre con la lámina enganchada en las ranuras" loading="lazy"><img src="img/prueba_corte.jpg" alt="Piezas de prueba sobre la cama de impresión" loading="lazy"><img src="img/prueba_laminas.jpg" alt="Tiras de lámina a contraluz" loading="lazy"></div>
+        </div></div>
+        <div class="step"><span class="tag">05 · VERSIÓN 3</span><div>
+          <h3>Tapa delgada e imanes</h3>
+          <p>La tapa de la base bajó de 7 a 3 mm y ganó un labio con 0,15 mm de juego. Se diseñaron ranuras para 8 imanes con pausa de impresión. Al final no se usaron: la impresión tenía que correr de noche sin nadie que hiciera la pausa. Las ranuras quedaron vacías y el labio sostiene la tapa.</p>
+        </div></div>
+        <div class="step"><span class="tag">06 · VERSIÓN 4</span><div>
+          <h3>Botones touch y Uno atornillado</h3>
+          <p>Se agregó una tapa superior con dos módulos TTP223 bajo 0,8 mm de plástico, que además esconde el borde de la lámina. El Uno se atornilla con 4 tornillos M3 × 6, igual que en el controlador CONTROLA FLOW.</p>
+          <div class="pics"><img src="img/modulos_touch.jpg" alt="Paneles de módulos touch TTP223 junto a un imán y las láminas de prueba" loading="lazy"><img src="img/render_despiece.jpg" alt="Despiece de la lámpara con todas sus piezas" loading="lazy"><img src="img/slicer.jpg" alt="Placa de impresión en Bambu Studio" loading="lazy"></div>
+        </div></div>
+        <div class="step"><span class="tag">07 · FABRICACIÓN</span><div>
+          <h3>Una placa, 4 h 20 min</h3>
+          <p>Las cinco piezas se imprimieron juntas en PLA negro y blanco, con capas de 0,16 mm, en la Bambu Lab X1C sobre Cool Plate. Ninguna pieza necesita soportes.</p>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =============================== DECISIONES =============================== -->
+  <section class="section" id="decisiones">
+    <div class="wrap">
+      <div class="section-head"><p class="eyebrow">Decisiones de diseño</p><h2>Por qué es así</h2></div>
+      <div class="grid-2">
+        <div class="decision"><b>El computador es el micrófono</b><span>El análisis de audio en el navegador es mucho más fino que el de un micrófono analógico en el Arduino, y además puede escuchar la música que suena en el propio computador.</span></div>
+        <div class="decision"><b>Lámina impresa plana</b><span>Se imprime en minutos sin soportes, con la textura de la cama hacia afuera. Se curva al montarla y la tensión la mantiene en las ranuras.</span></div>
+        <div class="decision"><b>20 mm entre LEDs y lámina</b><span>Es el compromiso entre una torre delgada y una luz pareja. Cada LED se ve como una mancha suave, lo que hace legible el vúmetro.</span></div>
+        <div class="decision"><b>Láminas intercambiables</b><span>Hay versiones de 1, 2, 3 y 4 capas: cuanto más delgada, más intenso el color y más visibles los puntos de luz.</span></div>
+        <div class="decision"><b>Brillo limitado por software</b><span>Nueve LEDs en blanco piden 540 mA, más de lo que da un puerto USB. El firmware limita el brillo a 120 de 255, unos 250 mA como máximo.</span></div>
+        <div class="decision"><b>Encajes en vez de pegamento</b><span>La torre y la lámina entran 5 mm en canales de la tapa con 0,18 mm de juego. Todo se puede desarmar.</span></div>
+        <div class="decision"><b>Sin soportes de impresión</b><span>Cada pieza está orientada para imprimirse tal cual: la torre de pie, las tapas boca abajo y la lámina plana.</span></div>
+        <div class="decision"><b>Funciona sin computador</b><span>Si nadie le manda datos, el Arduino sigue solo con arcoíris, respiración, fuego o luz cálida, y los botones cambian de modo.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =============================== PIEZAS =============================== -->
+  <section class="section" id="piezas">
+    <div class="wrap">
+      <div class="section-head"><p class="eyebrow">Piezas y materiales</p><h2>Lista de materiales</h2></div>
+      <div class="table-wrap"><table class="spec">
+        <thead><tr><th>Pieza</th><th>Material / modelo</th><th>Detalle</th></tr></thead>
+        <tbody>
+          <tr><td>1 · Torre</td><td>PLA negro</td><td>Trapecio de 46 × 22 × 157 mm con canal para la tira y ranuras curvas.</td></tr>
+          <tr><td>2 · Lámina</td><td>PLA blanco, 0,2 – 0,8 mm</td><td>44,3 × 156,8 mm, se imprime plana y se curva al montarla.</td></tr>
+          <tr><td>3 · Bandeja</td><td>PLA</td><td>Aloja el Uno sobre 4 pilares con tornillos M3 × 6 y muesca para el USB.</td></tr>
+          <tr><td>4 · Tapa de la base</td><td>PLA, 3 mm</td><td>Labio ajustado, canales para la torre y la lámina, agujero para cables.</td></tr>
+          <tr><td>5 · Tapa superior</td><td>PLA negro</td><td>Bolsillo para 2 módulos touch bajo 0,8 mm de plástico.</td></tr>
+          <tr><td>Microcontrolador</td><td>Arduino Uno R3</td><td>Firmware propio, 11 kB, comunicación serie a 115 200 baud.</td></tr>
+          <tr><td>Luz</td><td>Tira WS2812B, 9 LEDs</td><td>145 × 9,4 mm, 60 LEDs/m, 5 V.</td></tr>
+          <tr><td>Botones</td><td>2 × TTP223</td><td>Sensores capacitivos de 11 × 14,3 mm.</td></tr>
+          <tr><td>Cable</td><td>USB A–B</td><td>Datos y alimentación desde el computador.</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- =============================== CONEXIONES =============================== -->
+  <section class="section" id="conexiones">
+    <div class="wrap">
+      <div class="section-head"><p class="eyebrow">Conexiones</p><h2>Cableado</h2><p>Tres cables para la tira y tres por cada botón. El Uno tiene un solo pin de 5 V en el header, así que los botones toman 5 V del conector ICSP o de un empalme en Y.</p></div>
+      <div class="grid-2">
+        <div class="panel wiring">
+          <svg viewBox="0 0 520 330" role="img" aria-label="Diagrama de conexiones: tira LED a 5V, GND y D6; touch 1 a D7; touch 2 a D8">
+            <rect x="20" y="70" width="190" height="200" rx="14" fill="#0b6e7d" stroke="#0e8fa3"/>
+            <text x="115" y="100" fill="#fff" font-family="Inter,Arial" font-size="15" font-weight="700" text-anchor="middle">Arduino Uno</text>
+            <g font-family="JetBrains Mono,monospace" font-size="12" fill="#dff">
+              <text x="200" y="138" text-anchor="end">5V</text><text x="200" y="168" text-anchor="end">GND</text>
+              <text x="200" y="198" text-anchor="end">D6</text><text x="200" y="228" text-anchor="end">D7</text><text x="200" y="258" text-anchor="end">D8</text>
+            </g>
+            <g stroke-width="3" fill="none">
+              <path d="M210 134 H300 V60 H330" stroke="#e53935"/><path d="M210 164 H310 V80 H330" stroke="#9aa1ad"/><path d="M210 194 H320 V100 H330" stroke="#f2c318"/>
+              <path d="M300 134 V180 H330" stroke="#e53935"/><path d="M310 164 V200 H330" stroke="#9aa1ad"/><path d="M210 224 H330" stroke="#4fc3f7"/>
+              <path d="M290 134 V270 H330" stroke="#e53935"/><path d="M280 164 V290 H330" stroke="#9aa1ad"/><path d="M210 254 H270 V310 H330" stroke="#81c784"/>
+            </g>
+            <rect x="330" y="44" width="170" height="70" rx="10" fill="#141416" stroke="#333"/>
+            <text x="415" y="70" fill="#fff" font-family="Inter,Arial" font-size="13" font-weight="700" text-anchor="middle">Tira WS2812B · 9</text>
+            <text x="415" y="92" fill="#9aa1ad" font-family="JetBrains Mono,monospace" font-size="11" text-anchor="middle">5V · GND · DIN</text>
+            <rect x="330" y="166" width="170" height="64" rx="10" fill="#b71c1c" stroke="#e53935"/>
+            <text x="415" y="192" fill="#fff" font-family="Inter,Arial" font-size="13" font-weight="700" text-anchor="middle">Touch 1 · TTP223</text>
+            <text x="415" y="212" fill="#ffd" font-family="JetBrains Mono,monospace" font-size="11" text-anchor="middle">VCC · GND · I/O</text>
+            <rect x="330" y="256" width="170" height="64" rx="10" fill="#b71c1c" stroke="#e53935"/>
+            <text x="415" y="282" fill="#fff" font-family="Inter,Arial" font-size="13" font-weight="700" text-anchor="middle">Touch 2 · TTP223</text>
+            <text x="415" y="302" fill="#ffd" font-family="JetBrains Mono,monospace" font-size="11" text-anchor="middle">VCC · GND · I/O</text>
+          </svg>
+        </div>
+        <div class="table-wrap"><table class="spec">
+          <thead><tr><th>Desde</th><th>Hacia</th><th>Nota</th></tr></thead>
+          <tbody>
+            <tr><td>Tira 5V</td><td>Uno 5V</td><td>Header POWER</td></tr>
+            <tr><td>Tira GND</td><td>Uno GND</td><td>Cualquier GND</td></tr>
+            <tr><td>Tira DIN</td><td>Uno D6</td><td>Opcional: 330 Ω en serie</td></tr>
+            <tr><td>Touch 1 I/O</td><td>Uno D7</td><td>HIGH al tocar</td></tr>
+            <tr><td>Touch 2 I/O</td><td>Uno D8</td><td>HIGH al tocar</td></tr>
+            <tr><td>Touch VCC</td><td>5V del ICSP</td><td>Pin 2 del ICSP o empalme en Y</td></tr>
+            <tr><td>Touch GND</td><td>Uno GND</td><td>—</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =============================== USO =============================== -->
+  <section class="section" id="uso">
+    <div class="wrap">
+      <div class="section-head"><p class="eyebrow">Cómo se usa</p><h2>Tres formas de usarla</h2></div>
+      <div class="grid-3">
+        <div class="panel"><h3>Con música</h3><p class="muted" style="margin-top:8px">Abre la <a href="app.html">app</a> en Chrome o Edge, conecta la lámpara por USB y elige el micrófono o el audio del computador. Hay 6 efectos: vúmetro, espectro, pulso, fuego, ola y chispas.</p></div>
+        <div class="panel"><h3>Como lámpara</h3><p class="muted" style="margin-top:8px">Sin computador, la lámpara alterna arcoíris, respiración, fuego y luz cálida. En la app hay además color fijo y un reloj de enfoque de 25 minutos que vacía la torre.</p></div>
+        <div class="panel"><h3>Con Claude Code</h3><p class="muted" style="margin-top:8px">Un script cambia la luz según lo que hace Claude: ámbar si necesita tu respuesta, azul si trabaja, verde cuando termina. Un toque en cualquier botón apaga el aviso.</p></div>
+      </div>
+
+      <h3 style="margin:36px 0 14px">Botones touch (valores por defecto en la app)</h3>
+      <div class="table-wrap"><table class="spec">
+        <thead><tr><th>Gesto</th><th>Con la app</th><th>Sin computador</th></tr></thead>
+        <tbody>
+          <tr><td>Touch 1 · toque</td><td>Siguiente efecto</td><td>Siguiente modo</td></tr>
+          <tr><td>Touch 1 · doble</td><td>Siguiente paleta</td><td>Modo anterior</td></tr>
+          <tr><td>Touch 1 · mantener</td><td>Brillo bajo / medio / alto</td><td>Brillo bajo / medio / alto</td></tr>
+          <tr><td>Touch 2 · toque</td><td>Prender / apagar</td><td>Prender / apagar</td></tr>
+          <tr><td>Touch 2 · doble</td><td>Cambiar sensibilidad</td><td>Color al azar</td></tr>
+          <tr><td>Touch 2 · mantener</td><td>Reloj de enfoque</td><td>Probar el aviso</td></tr>
+          <tr><td>Los dos juntos</td><td>Lámpara cálida</td><td>Volver a arcoíris</td></tr>
+        </tbody>
+      </table></div>
+      <p class="muted" style="margin-top:12px;font-size:.9rem">En la app cada gesto se puede reasignar a otra acción. La configuración queda guardada en el navegador.</p>
+
+      <div id="claude" style="margin-top:40px" class="grid-2">
+        <div>
+          <h3>Avisos de Claude Code</h3>
+          <ol class="muted" style="padding-left:20px;margin-top:10px">
+            <li>Instala pyserial: <code>pip install pyserial</code></li>
+            <li>Descarga <a href="firmware/claude_lampara.py" download>claude_lampara.py</a> y guárdalo, por ejemplo, en <code>C:/Users/PC/lampara/</code>.</li>
+            <li>Agrega los hooks a <code>%USERPROFILE%\.claude\settings.json</code>.</li>
+            <li>El puerto USB lo usa un programa a la vez: desconecta la app web para que funcionen los avisos.</li>
+          </ol>
+        </div>
+<pre>{
+  "hooks": {
+    "UserPromptSubmit": [{ "hooks": [{ "type": "command",
+      "command": "python C:/Users/PC/lampara/claude_lampara.py trabajando" }] }],
+    "Notification": [{ "hooks": [{ "type": "command",
+      "command": "python C:/Users/PC/lampara/claude_lampara.py aviso" }] }],
+    "Stop": [{ "hooks": [{ "type": "command",
+      "command": "python C:/Users/PC/lampara/claude_lampara.py listo" }] }]
+  }
+}</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- =============================== COLORES =============================== -->
+  <section class="section" id="colores">
+    <div class="wrap">
+      <div class="section-head"><p class="eyebrow">Variantes</p><h2>Vistas y combinaciones de color</h2><p>La base acepta uno o dos colores de PLA. La torre negra y la lámina blanca se mantienen para que la luz sea la protagonista.</p></div>
+      <figure class="figure" style="margin-bottom:20px"><img src="img/render_vistas.jpg" alt="Vistas de la lámpara armada con cotas" loading="lazy"><figcaption>Vistas con cotas: base de 64 × 80 × 39 mm y 200 mm de alto total.</figcaption></figure>
+      <figure class="figure"><img src="img/render_colores.jpg" alt="Seis combinaciones de color para la base" loading="lazy"></figure>
+    </div>
+  </section>
+
+  <!-- =============================== ARCHIVOS =============================== -->
+  <section class="section" id="archivos">
+    <div class="wrap">
+      <div class="section-head"><p class="eyebrow">Archivos</p><h2>Todo para fabricarla</h2></div>
+      <div class="btn-row">
+        <a class="btn primary" href="lampara_archivos.zip" download>STL + STEP + modelo paramétrico (.zip)</a>
+        <a class="btn" href="firmware/lampara_sonido/lampara_sonido.ino" download>Firmware Arduino</a>
+        <a class="btn" href="firmware/claude_lampara.py" download>Script de avisos</a>
+        <a class="btn" href="app.html">App web</a>
+      </div>
+      <p class="muted" style="margin-top:14px;font-size:.9rem">El modelo es paramétrico (CadQuery, Python): cambiando una medida se regeneran todas las piezas. El STEP abre en Fusion con las piezas separadas.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-foot"><div class="wrap"><span>José · Diseño e ingeniería · Santiago, Chile</span><a href="../index.html">← Todos los proyectos</a></div></footer>
+</body>
+</html>

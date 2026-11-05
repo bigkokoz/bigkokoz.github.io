@@ -3,38 +3,73 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mis Proyectos</title>
-<link rel="stylesheet" href="css/styles.css">
+<title>José · Proyectos</title>
+<meta name="description" content="Proyectos de José: objetos con Arduino, fabricación digital e interfaces web que puedes abrir y usar.">
+<meta property="og:title" content="José · Proyectos">
+<meta property="og:image" content="assets/projects/lampara-sonido/thumb.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/site.css">
+<style>
+  .intro{padding:88px 0 48px}
+  .intro h1{font-size:clamp(2.6rem,6vw,4.4rem)}
+  .intro .lead{font-size:clamp(1.05rem,2vw,1.3rem);color:var(--muted);max-width:720px;margin-top:20px}
+  .feature{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:0;background:var(--surface);border:1px solid var(--line);border-radius:22px;overflow:hidden;margin-bottom:22px;transition:border-color .2s}
+  .feature:hover{border-color:var(--line-2)}
+  .feature .media{display:block;background:#15171c;min-height:100%}
+  .feature .media img{width:100%;height:100%;object-fit:cover;aspect-ratio:16/10}
+  .feature .body{padding:34px;display:flex;flex-direction:column;gap:14px;justify-content:center}
+  .feature h2{font-size:clamp(1.6rem,3vw,2.2rem)}
+  .feature p{color:var(--muted)}
+  .feature:nth-of-type(even){grid-template-columns:minmax(0,1fr) minmax(0,1.25fr)}
+  .feature:nth-of-type(even) .media{order:2}
+  @media (max-width:860px){.feature,.feature:nth-of-type(even){grid-template-columns:minmax(0,1fr)}.feature:nth-of-type(even) .media{order:0}}
+  .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+  @media (max-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media (max-width:600px){.grid{grid-template-columns:minmax(0,1fr)}}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;transition:border-color .2s,transform .2s}
+  .card:hover{border-color:var(--line-2);transform:translateY(-3px)}
+  .card .media img,.card .fallback{width:100%;aspect-ratio:16/10;object-fit:cover;display:block}
+  .fallback{display:grid!important;place-items:center;font:700 2.2rem var(--font);color:#fff;letter-spacing:.04em}
+  .card .body{padding:20px;display:flex;flex-direction:column;gap:10px;flex:1}
+  .card h3{font-size:1.15rem}
+  .card p{color:var(--muted);font-size:.92rem;line-height:1.5}
+  .card .btn-row{margin-top:auto;padding-top:6px}
+  .meta-line{font:500 .74rem var(--mono);color:var(--faint);letter-spacing:.06em;text-transform:uppercase}
+  main.wrap{padding-bottom:72px}
+  .sec-title{display:flex;justify-content:space-between;align-items:end;gap:12px;margin:56px 0 20px}
+  .load-error{color:#ff8a8a;border:1px solid rgba(255,90,90,.3);background:rgba(255,90,90,.08);border-radius:12px;padding:14px 18px}
+  dialog{background:var(--surface);color:var(--text);border:1px solid var(--line-2);border-radius:18px;padding:0;max-width:760px;width:calc(100% - 32px)}
+  dialog::backdrop{background:rgba(0,0,0,.7)}
+  dialog img{width:100%;aspect-ratio:16/10;object-fit:cover}
+  dialog .body{padding:24px;display:grid;gap:12px}
+</style>
 </head>
 <body>
-
-<header id="siteHeader">
-  <h1 id="siteTitle">Cargando…</h1>
-  <p id="siteTagline"></p>
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="./"><span class="brand-dot"></span><span id="brandName">José</span> · Proyectos</a>
+    <nav class="nav"><a href="#destacados">Destacados</a><a href="#todos">Todos</a><a id="ghLink" href="https://github.com/bigkokoz" target="_blank" rel="noopener">GitHub</a></nav>
+  </div>
 </header>
 
-<main>
-  <p id="loadError" class="load-error" hidden>No se pudieron cargar los proyectos. Intenta recargar la página.</p>
-  <div class="grid" id="grid"></div>
+<main class="wrap">
+  <section class="intro">
+    <p class="eyebrow" id="siteLocation">Santiago, Chile</p>
+    <h1 id="siteTitle">José</h1>
+    <p class="lead" id="siteTagline"></p>
+    <p class="muted" style="margin-top:14px;font-size:.95rem">Los proyectos con <b style="color:var(--text)">Abrir app</b> funcionan en el navegador: algunos se conectan a su objeto por USB.</p>
+  </section>
+
+  <p id="loadError" class="load-error" hidden>No se pudieron cargar los proyectos. Recarga la página.</p>
+  <section id="destacados"></section>
+  <div class="sec-title" id="todosHead"><h2 id="todos">Otros proyectos</h2></div>
+  <section class="grid" id="grid"></section>
 </main>
 
-<div class="overlay" id="overlay">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <button class="modal-close" id="modalCloseBtn" aria-label="Cerrar">✕</button>
-    <div class="modal-media" id="modalMedia"></div>
-    <div class="modal-body">
-      <button class="back-btn" id="modalBackBtn">← Volver a mis proyectos</button>
-      <p class="modal-subtitle" id="modalSubtitle"></p>
-      <h2 id="modalTitle" tabindex="-1"></h2>
-      <p class="modal-meta" id="modalMeta"></p>
-      <p id="modalDesc"></p>
-      <ul class="modal-tags" id="modalTags"></ul>
-      <div class="modal-links" id="modalLinks"></div>
-      <div class="modal-contact" id="modalContact"></div>
-    </div>
-  </div>
-</div>
+<dialog id="detail"><div id="detailInner"></div></dialog>
 
+<footer class="site-foot"><div class="wrap"><span id="footName">José</span><span>Hecho con HTML, CSS y JavaScript · publicado en GitHub Pages</span></div></footer>
 <script src="js/app.js" defer></script>
 </body>
 </html>

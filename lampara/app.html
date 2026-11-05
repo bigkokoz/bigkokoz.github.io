@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lámpara reactiva · App</title>
+<meta name="description" content="Conecta la lámpara reactiva al sonido por USB y contrólala desde el navegador.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/site.css">
+<style>
+  .app{display:grid;grid-template-columns:340px minmax(0,1fr);gap:24px;padding:28px 0 60px}
+  @media (max-width:900px){.app{grid-template-columns:minmax(0,1fr)}}
+  .stage{position:sticky;top:84px;align-self:start;display:grid;gap:14px}
+  @media (max-width:900px){.stage{position:static}}
+  .lamp-box{background:radial-gradient(120% 80% at 50% 40%,#1b1e25 0%,#0d0e12 70%);border:1px solid var(--line);border-radius:var(--radius);display:grid;place-items:center;padding:18px 0 10px;position:relative}
+  #lampCanvas{width:260px;height:560px}
+  .touch-row{display:flex;gap:10px;justify-content:center;padding:6px 0 4px}
+  .touch{width:64px;height:40px;border-radius:12px;border:1px solid var(--line-2);background:#1a1c22;color:var(--muted);font:600 .72rem var(--mono);cursor:pointer;user-select:none;touch-action:none}
+  .touch.on{background:var(--accent);color:#16110b;border-color:var(--accent)}
+  .status{display:flex;align-items:center;gap:10px;font-size:.9rem}
+  .led{width:10px;height:10px;border-radius:50%;background:#555;flex:none}
+  .led.ok{background:var(--ok);box-shadow:0 0 10px var(--ok)}
+  .led.wait{background:var(--warn)}
+  .meter{height:6px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+  .meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,#19d36c,#ffd21f,#ff3b3b);transition:width .05s}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .card-btn{text-align:left;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;color:var(--text);cursor:pointer;font:inherit;transition:border-color .15s,background .15s}
+  .card-btn:hover{border-color:var(--line-2)}
+  .card-btn[aria-pressed="true"]{border-color:var(--accent);background:rgba(255,122,26,.09)}
+  .card-btn b{display:block;font-size:.95rem}
+  .card-btn span{display:block;font-size:.78rem;color:var(--muted);margin-top:2px;line-height:1.35}
+  .row{display:grid;grid-template-columns:130px minmax(0,1fr) 46px;gap:12px;align-items:center;margin-top:12px}
+  .row label{font-size:.88rem;color:var(--muted)}
+  .row output{font:500 .8rem var(--mono);color:var(--muted);text-align:right}
+  input[type=range]{width:100%;accent-color:var(--accent)}
+  select,input[type=color]{background:var(--surface-2);color:var(--text);border:1px solid var(--line-2);border-radius:8px;padding:6px 8px;font:inherit;font-size:.86rem}
+  input[type=color]{padding:2px;height:34px;width:56px}
+  .panels{display:grid;gap:18px}
+  .panel h2{font-size:1.05rem;letter-spacing:-.01em;margin-bottom:4px}
+  .panel .sub{color:var(--muted);font-size:.88rem;margin-bottom:14px}
+  .seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:3px}
+  .seg button{border:0;background:transparent;color:var(--muted);font:600 .84rem var(--font);padding:7px 14px;border-radius:999px;cursor:pointer}
+  .seg button[aria-pressed="true"]{background:var(--text);color:#111}
+  .map{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:8px 14px;align-items:center}
+  .map .g{font-size:.88rem}
+  .map .g small{display:block;color:var(--faint);font-family:var(--mono);font-size:.72rem}
+  .log{font:500 .78rem var(--mono);color:var(--muted);background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;height:96px;overflow:auto;white-space:pre-wrap}
+  .focus-time{font:600 2rem var(--mono);letter-spacing:.02em}
+  .warn-box{display:none}
+  .unsupported .warn-box{display:block}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="../index.html"><span class="brand-dot"></span>José · Proyectos</a>
+    <nav class="nav">
+      <a href="index.html">El proyecto</a>
+      <a href="app.html" aria-current="page">App</a>
+      <a href="lamina.html">Lámina</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="app">
+    <!-- ======================= LÁMPARA VIRTUAL ======================= -->
+    <aside class="stage">
+      <div class="lamp-box">
+        <canvas id="lampCanvas" width="520" height="1120" aria-label="Vista previa de la lámpara"></canvas>
+        <div class="touch-row" aria-label="Botones touch virtuales">
+          <button class="touch" id="vt1" title="Toque · doble toque · mantener">TOUCH 1</button>
+          <button class="touch" id="vt2" title="Toque · doble toque · mantener">TOUCH 2</button>
+        </div>
+      </div>
+      <div class="panel" style="padding:16px 18px">
+        <div class="status"><span class="led" id="serialLed"></span><span id="serialTxt">Lámpara sin conectar · modo simulador</span></div>
+        <div class="status" style="margin-top:8px"><span class="led" id="audioLed"></span><span id="audioTxt">Audio apagado</span></div>
+        <div class="meter" style="margin-top:12px"><i id="meter"></i></div>
+      </div>
+    </aside>
+
+    <!-- ======================= CONTROLES ======================= -->
+    <section class="panels">
+      <div class="panel">
+        <p class="eyebrow">Lámpara reactiva al sonido</p>
+        <h1 style="font-size:1.9rem;margin:6px 0 8px">Conecta y juega</h1>
+        <p class="muted">Funciona en Chrome o Edge de escritorio. Sin la lámpara, la vista de la izquierda simula exactamente lo que harían los 9 LEDs.</p>
+        <div class="btn-row" style="margin-top:18px">
+          <button class="btn primary" id="btnSerial">Conectar lámpara (USB)</button>
+          <button class="btn" id="btnMic">Usar micrófono</button>
+          <button class="btn" id="btnSys">Usar audio del computador</button>
+        </div>
+        <div class="callout warn-box" style="margin-top:16px">Este navegador no soporta Web Serial. La simulación funciona igual; para conectar la lámpara abre esta página en Chrome o Edge.</div>
+      </div>
+
+      <div class="panel">
+        <h2>Efecto con sonido</h2>
+        <p class="sub">La lámpara reacciona al volumen, a las frecuencias o al ritmo del audio.</p>
+        <div class="cards" id="fxCards"></div>
+        <div class="row"><label for="sens">Sensibilidad</label><input type="range" id="sens" min="0.3" max="4" step="0.05" value="1.4"><output id="sensOut">1.4</output></div>
+        <div class="row"><label for="bright">Brillo</label><input type="range" id="bright" min="10" max="120" step="1" value="80"><output id="brightOut">80</output></div>
+        <div class="row"><label for="palette">Paleta</label><select id="palette"></select><span></span></div>
+      </div>
+
+      <div class="panel">
+        <h2>Escenas sin sonido</h2>
+        <p class="sub">Para usarla como lámpara o como reloj de concentración.</p>
+        <div class="cards" id="sceneCards"></div>
+        <div class="row"><label for="pick">Color fijo</label><input type="color" id="pick" value="#ff8a2a"><span></span></div>
+        <div style="margin-top:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+          <span class="focus-time" id="focusTime">25:00</span>
+          <div class="btn-row">
+            <button class="btn small" id="focusStart">Empezar enfoque 25 min</button>
+            <button class="btn small" id="focusBreak">Pausa 5 min</button>
+            <button class="btn small" id="focusStop">Detener</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Avisos de Claude</h2>
+        <p class="sub">La lámpara te avisa cuando Claude necesita tu respuesta, mientras trabaja y cuando termina.</p>
+        <div class="btn-row">
+          <button class="btn small" data-alert="aviso">Necesita tu input</button>
+          <button class="btn small" data-alert="trabajando">Trabajando</button>
+          <button class="btn small" data-alert="listo">Listo</button>
+          <button class="btn small" data-alert="none">Quitar aviso</button>
+        </div>
+        <p class="muted" style="font-size:.88rem;margin-top:14px">Para que se active solo con Claude Code, usa <a href="firmware/claude_lampara.py" download>claude_lampara.py</a> con los hooks de Claude Code (instrucciones en <a href="index.html#claude">la página del proyecto</a>). Cualquier toque en un botón touch quita el aviso.</p>
+      </div>
+
+      <div class="panel">
+        <h2>Botones touch</h2>
+        <p class="sub">Cada botón reconoce toque, doble toque y mantener. Tocar los dos a la vez es un gesto más. Elige qué hace cada uno: se guarda en este navegador.</p>
+        <div class="map" id="mapGrid"></div>
+        <p class="muted" style="font-size:.82rem;margin:14px 0 8px">Registro de gestos</p>
+        <div class="log" id="log" aria-live="polite"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Archivos</h2>
+        <div class="btn-row" style="margin-top:8px">
+          <a class="btn small" href="firmware/lampara_sonido/lampara_sonido.ino" download>Firmware (.ino)</a>
+          <a class="btn small" href="firmware/claude_lampara.py" download>Avisos de Claude (.py)</a>
+          <a class="btn small" href="index.html#conexiones">Conexiones</a>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+(() => {
+'use strict';
+const N = 9;
+const $ = id => document.getElementById(id);
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const hsv = (h, s, v) => { h = ((h % 1) + 1) % 1; const i = Math.floor(h * 6), f = h * 6 - i, p = v * (1 - s), q = v * (1 - f * s), t = v * (1 - (1 - f) * s);
+  const [r, g, b] = [[v,t,p],[q,v,p],[p,v,t],[p,q,v],[t,p,v],[v,p,q]][i % 6]; return [r * 255, g * 255, b * 255]; };
+const mix = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k];
+const scale = (c, k) => [c[0] * k, c[1] * k, c[2] * k];
+const hex = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+
+/* ---------------- paletas: 9 colores de abajo hacia arriba ---------------- */
+const PALETTES = {
+  'Clásica':   i => hsv(0.36 - i * 0.045, 1, 1),
+  'Neón':      i => hsv(0.83 - i * 0.07, 0.9, 1),
+  'Océano':    i => hsv(0.48 + i * 0.025, 0.85, 1),
+  'Atardecer': i => hsv(0.08 - i * 0.012 + (i > 6 ? 0.9 : 0), 0.95, 1),
+  'Hielo':     i => mix([40, 120, 255], [230, 245, 255], i / 8),
+  'Color fijo':i => hex($('pick').value),
+};
+const pal = i => PALETTES[state.palette](i);
+
+/* ---------------- estado ---------------- */
+const state = {
+  effect: 'vumetro', scene: null, palette: 'Clásica', on: true, alert: null, alertT: 0,
+  sens: 1.4, bright: 80, focus: null, frozen: false,
+};
+const audio = { ctx: null, an: null, src: null, stream: null, level: 0, peak: 0, bands: new Array(N).fill(0), bandMax: new Array(N).fill(0.05), beat: 0, lastBeat: 0, energyAvg: 0 };
+
+/* ---------------- efectos con sonido ---------------- */
+const peakHold = { v: 0, t: 0 };
+const fire = new Array(N).fill(0);
+let wave = 0, pulseHue = 0;
+const FX = {
+  vumetro: { name: 'Vúmetro', desc: 'Se llena con el volumen, con punto de pico.', fn: (t) => {
+      const lv = clamp(audio.level * 9.2, 0, 9);
+      if (lv > peakHold.v) { peakHold.v = lv; peakHold.t = t; } else if (t - peakHold.t > 450) peakHold.v = Math.max(lv, peakHold.v - 0.12);
+      return Array.from({ length: N }, (_, i) => { const k = clamp(lv - i, 0, 1); let c = scale(pal(i), k);
+        if (Math.floor(peakHold.v) === i && peakHold.v > 0.6) c = [255, 255, 255]; return c; });
+  }},
+  espectro: { name: 'Espectro', desc: 'Cada LED es una banda: graves abajo, agudos arriba.', fn: () =>
+      audio.bands.map((b, i) => scale(pal(i), clamp(b, 0, 1) ** 1.4)) },
+  pulso: { name: 'Pulso', desc: 'Destella en cada golpe y cambia de color.', fn: (t) => {
+      if (audio.beat) pulseHue += 0.13;
+      const k = clamp(Math.exp(-(t - audio.lastBeat) / 220), 0, 1);
+      return Array.from({ length: N }, (_, i) => scale(state.palette === 'Clásica' ? hsv(pulseHue + i * 0.01, 0.9, 1) : pal(i), 0.06 + 0.94 * k * (0.75 + 0.25 * Math.sin(i))));
+  }},
+  fuego: { name: 'Fuego', desc: 'Una llama que crece con la música.', fn: () => {
+      const heat = audio.level * 2.2;
+      for (let i = 0; i < N; i++) fire[i] = Math.max(0, fire[i] - (0.06 + Math.random() * 0.1));
+      for (let i = N - 1; i >= 2; i--) fire[i] = (fire[i - 1] + fire[i - 2] * 2) / 3;
+      fire[0] = clamp(fire[0] + heat * (0.5 + Math.random()), 0, 1.2); fire[1] = clamp(fire[1] + heat * Math.random() * 0.6, 0, 1.2);
+      return fire.map(h => { h = clamp(h, 0, 1); return [255 * Math.min(1, h * 2), 255 * clamp(h * 2 - 0.6, 0, 1) * 0.8, 255 * clamp(h * 3 - 2.4, 0, 1)]; });
+  }},
+  ola: { name: 'Ola', desc: 'Arcoíris que corre más rápido con más volumen.', fn: (t, dt) => {
+      wave += dt * (0.00015 + audio.level * 0.004);
+      return Array.from({ length: N }, (_, i) => scale(hsv(wave + i / 9, 0.95, 1), 0.25 + 0.75 * clamp(audio.level * 3, 0, 1)));
+  }},
+  chispas: { name: 'Chispas', desc: 'Destellos sueltos: más sonido, más chispas.', fn: (() => { const s = new Array(N).fill(0).map(() => [0, 0, 0]); return () => {
+      for (let i = 0; i < N; i++) s[i] = scale(s[i], 0.82);
+      const n = Math.random() < audio.level * 3 ? 1 + Math.floor(audio.level * 6) : 0;
+      for (let k = 0; k < n; k++) { const i = Math.floor(Math.random() * N); s[i] = pal(i); }
+      return s.map(c => c.slice()); }; })() },
+};
+
+/* ---------------- escenas sin sonido ---------------- */
+const SCENES = {
+  calida: { name: 'Lámpara cálida', desc: 'Luz blanca cálida para leer.', fn: () => Array.from({ length: N }, (_, i) => [255, 140 + i * 3, 50 + i * 2]) },
+  fijo:   { name: 'Color fijo', desc: 'El color que elijas abajo.', fn: () => new Array(N).fill(0).map(() => hex($('pick').value)) },
+  respira:{ name: 'Respiración', desc: 'Sube y baja lento: inhala 4 s, exhala 4 s.', fn: t => { const k = 0.1 + 0.9 * (0.5 - 0.5 * Math.cos(t / 4000 * Math.PI)); return new Array(N).fill(0).map((_, i) => scale(pal(i), k)); } },
+  arcoiris:{ name: 'Arcoíris', desc: 'Colores que giran sin parar.', fn: t => Array.from({ length: N }, (_, i) => hsv(t / 6000 + i / 9, 0.9, 1)) },
+  enfoque:{ name: 'Enfoque', desc: 'La torre se vacía mientras corre el tiempo.', fn: t => focusFrame(t) },
+};
+
+/* ---------------- avisos (iguales a los del firmware) ---------------- */
+function alertFrame(t) {
+  const dt = t - state.alertT;
+  if (state.alert === 'aviso') { const k = 0.25 + 0.75 * (0.5 - 0.5 * Math.cos(t / 260));
+    const f = new Array(N).fill(0).map(() => [255 * k, 110 * k, 0]); if (Math.floor(t / 400) % 2) f[N - 1] = [255, 255, 255]; return f; }
+  if (state.alert === 'trabajando') { let p = Math.floor(t / 110) % (2 * N - 2); if (p >= N) p = 2 * N - 2 - p;
+    return Array.from({ length: N }, (_, i) => { const d = Math.abs(i - p); return [0, d === 0 ? 90 : d === 1 ? 25 : 0, d === 0 ? 255 : d === 1 ? 70 : 6]; }); }
+  if (state.alert === 'listo') { const n = Math.min(N, Math.floor(dt / 90) + 1); if (dt > 2600) state.alert = null;
+    return Array.from({ length: N }, (_, i) => i < n ? [0, 255, 70] : [0, 0, 0]); }
+  return null;
+}
+function setAlert(a) { state.alert = a === 'none' ? null : a; state.alertT = performance.now(); logLine(a === 'none' ? 'Aviso quitado' : 'Aviso: ' + a); }
+
+/* ---------------- enfoque (pomodoro) ---------------- */
+function focusFrame(t) {
+  const f = state.focus; if (!f) return new Array(N).fill(0).map((_, i) => scale(pal(i), 0.08));
+  const left = Math.max(0, f.end - Date.now()), frac = left / f.dur, lit = frac * N;
+  if (left === 0) { const k = Math.floor(t / 300) % 2; return new Array(N).fill(0).map(() => k ? (f.kind === 'work' ? [255, 90, 0] : [0, 160, 255]) : [0, 0, 0]); }
+  const base = f.kind === 'work' ? [255, 110, 20] : [40, 150, 255];
+  return Array.from({ length: N }, (_, i) => scale(base, clamp(lit - i, 0, 1) * (0.85 + 0.15 * Math.sin(t / 500))));
+}
+function startFocus(min, kind) { state.focus = { end: Date.now() + min * 60000, dur: min * 60000, kind }; selectScene('enfoque'); }
+setInterval(() => { const f = state.focus; const ms = f ? Math.max(0, f.end - Date.now()) : 25 * 60000;
+  $('focusTime').textContent = String(Math.floor(ms / 60000)).padStart(2, '0') + ':' + String(Math.floor(ms / 1000) % 60).padStart(2, '0'); }, 250);
+
+/* ---------------- audio ---------------- */
+async function startAudio(kind) {
+  try {
+    stopAudio();
+    const stream = kind === 'sys'
+      ? await navigator.mediaDevices.getDisplayMedia({ video: true, audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
+      : await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    if (!stream.getAudioTracks().length) { alert('No llegó audio. Al compartir, marca "Compartir audio del sistema" o elige una pestaña con audio.'); stream.getTracks().forEach(t => t.stop()); return; }
+    stream.getVideoTracks().forEach(t => t.stop());
+    audio.ctx = audio.ctx || new (window.AudioContext || window.webkitAudioContext)();
+    await audio.ctx.resume();
+    audio.an = audio.ctx.createAnalyser(); audio.an.fftSize = 2048; audio.an.smoothingTimeConstant = 0.55;
+    audio.src = audio.ctx.createMediaStreamSource(stream); audio.src.connect(audio.an); audio.stream = stream;
+    $('audioLed').className = 'led ok'; $('audioTxt').textContent = kind === 'sys' ? 'Escuchando el audio del computador' : 'Escuchando el micrófono';
+    if (state.scene) { state.scene = null; renderCards(); }
+  } catch (e) { $('audioTxt').textContent = 'Permiso de audio rechazado'; }
+}
+function stopAudio() { if (audio.stream) audio.stream.getTracks().forEach(t => t.stop()); audio.stream = null; audio.an = null; $('audioLed').className = 'led'; $('audioTxt').textContent = 'Audio apagado'; }
+const td = new Float32Array(2048), fd = new Uint8Array(1024);
+function analyse(t) {
+  if (!audio.an || state.frozen) { audio.level *= 0.9; audio.bands = audio.bands.map(b => b * 0.9); audio.beat = 0; return; }
+  audio.an.getFloatTimeDomainData(td); audio.an.getByteFrequencyData(fd);
+  let s = 0; for (let i = 0; i < td.length; i++) s += td[i] * td[i];
+  const rms = Math.sqrt(s / td.length) * state.sens * 3.2;
+  audio.level = rms > audio.level ? rms * 0.7 + audio.level * 0.3 : audio.level * 0.88 + rms * 0.12;
+  const hzPerBin = audio.ctx.sampleRate / 2048;
+  for (let b = 0; b < N; b++) {
+    const lo = 50 * Math.pow(9000 / 50, b / N), hi = 50 * Math.pow(9000 / 50, (b + 1) / N);
+    let m = 0, c = 0; for (let k = Math.floor(lo / hzPerBin); k <= Math.ceil(hi / hzPerBin); k++) { m += fd[k] || 0; c++; }
+    const v = (m / Math.max(1, c)) / 255; audio.bandMax[b] = Math.max(v, audio.bandMax[b] * 0.996, 0.08);
+    const n = clamp(v / audio.bandMax[b] * (0.55 + state.sens * 0.25), 0, 1); audio.bands[b] = n > audio.bands[b] ? n : audio.bands[b] * 0.85 + n * 0.15;
+  }
+  const e = (audio.bands[0] + audio.bands[1] + audio.bands[2]) / 3;
+  audio.beat = (e > audio.energyAvg * 1.35 && e > 0.35 && t - audio.lastBeat > 180) ? 1 : 0;
+  if (audio.beat) audio.lastBeat = t;
+  audio.energyAvg = audio.energyAvg * 0.94 + e * 0.06;
+  $('meter').style.width = clamp(audio.level * 100, 0, 100) + '%';
+}
+
+/* ---------------- web serial ---------------- */
+const ser = { port: null, writer: null, busy: false, ready: false, queue: [] };
+async function connectSerial() {
+  if (!('serial' in navigator)) return;
+  if (ser.port) { await disconnectSerial(); return; }
+  try {
+    ser.port = await navigator.serial.requestPort();
+    await ser.port.open({ baudRate: 115200 });
+    ser.writer = ser.port.writable.getWriter();
+    $('serialLed').className = 'led wait'; $('serialTxt').textContent = 'Conectando…';
+    readLoop();
+    setTimeout(() => sendLine('P'), 1900);                 // el Uno se reinicia al abrir el puerto
+    setTimeout(() => sendLine('B' + state.bright), 2000);
+    $('btnSerial').textContent = 'Desconectar lámpara';
+  } catch (e) { ser.port = null; $('serialTxt').textContent = 'No se pudo conectar'; }
+}
+async function disconnectSerial() {
+  try { ser.reader && await ser.reader.cancel(); } catch (e) {}
+  try { ser.writer && ser.writer.releaseLock(); await ser.port.close(); } catch (e) {}
+  ser.port = ser.writer = ser.reader = null; ser.ready = false; ser.queue = [];
+  $('serialLed').className = 'led'; $('serialTxt').textContent = 'Lámpara sin conectar · modo simulador'; $('btnSerial').textContent = 'Conectar lámpara (USB)';
+}
+async function readLoop() {
+  const dec = new TextDecoderStream(); ser.port.readable.pipeTo(dec.writable).catch(() => {});
+  ser.reader = dec.readable.getReader(); let buf = '';
+  try { while (true) { const { value, done } = await ser.reader.read(); if (done) break; buf += value; let i;
+      while ((i = buf.indexOf('\n')) >= 0) { const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1); onLine(line); } } }
+  catch (e) {}
+}
+function onLine(line) {
+  if (line.startsWith('LAMPARA')) { ser.ready = true; $('serialLed').className = 'led ok'; $('serialTxt').textContent = 'Lámpara conectada · ' + line; return; }
+  const m = /^E([12B])([TDLB])$/.exec(line); if (m) gesture(m[1] === 'B' ? 'BB' : m[1] + m[2]);
+}
+async function sendBytes(bytes) { if (!ser.writer || ser.busy) return false; ser.busy = true; try { await ser.writer.write(bytes); } catch (e) { disconnectSerial(); } ser.busy = false; return true; }
+function sendLine(s) { if (!ser.writer) return; ser.queue.push(new TextEncoder().encode(s + '\n')); flushQueue(); }
+async function flushQueue() { while (ser.queue.length && ser.writer && !ser.busy) { const b = ser.queue.shift(); await sendBytes(b); } }
+function sendFrame(f) {
+  const b = new Uint8Array(29); b[0] = 0xFF; let sum = 0;
+  for (let i = 0; i < N; i++) for (let k = 0; k < 3; k++) { const v = clamp(Math.round(f[i][k]), 0, 254); b[1 + i * 3 + k] = v; sum += v; }
+  b[28] = sum % 251; if (ser.ready && !ser.queue.length) sendBytes(b); else flushQueue();
+}
+
+/* ---------------- gestos de los botones ---------------- */
+const GESTURES = { '1T': 'Touch 1 · toque', '1D': 'Touch 1 · doble', '1L': 'Touch 1 · mantener', '2T': 'Touch 2 · toque', '2D': 'Touch 2 · doble', '2L': 'Touch 2 · mantener', 'BB': 'Los dos juntos' };
+const ACTIONS = {
+  nextFx: ['Siguiente efecto', () => { const k = Object.keys(FX); selectFx(k[(k.indexOf(state.effect) + 1) % k.length]); }],
+  prevFx: ['Efecto anterior', () => { const k = Object.keys(FX); selectFx(k[(k.indexOf(state.effect) + k.length - 1) % k.length]); }],
+  nextPal: ['Siguiente paleta', () => { const k = Object.keys(PALETTES); setPalette(k[(k.indexOf(state.palette) + 1) % k.length]); }],
+  bright: ['Brillo bajo / medio / alto', () => { const s = [30, 70, 120]; const i = (s.findIndex(v => v >= state.bright) + 1) % 3; setBright(s[i]); }],
+  sens: ['Sensibilidad (cambia)', () => { const s = [0.8, 1.4, 2.4]; const i = (s.findIndex(v => v >= state.sens - 0.01) + 1) % 3; $('sens').value = s[i]; onSens(); }],
+  power: ['Prender / apagar', () => { state.on = !state.on; }],
+  freeze: ['Congelar / soltar sonido', () => { state.frozen = !state.frozen; }],
+  calida: ['Lámpara cálida', () => selectScene(state.scene === 'calida' ? null : 'calida')],
+  focus: ['Empezar / parar enfoque', () => { if (state.focus) { state.focus = null; selectScene(null); } else startFocus(25, 'work'); }],
+  alert: ['Probar aviso de Claude', () => setAlert('aviso')],
+  clear: ['Quitar aviso', () => setAlert('none')],
+  none: ['— Nada —', () => {}],
+};
+const DEFAULT_MAP = { '1T': 'nextFx', '1D': 'nextPal', '1L': 'bright', '2T': 'power', '2D': 'sens', '2L': 'focus', 'BB': 'calida' };
+let MAP = Object.assign({}, DEFAULT_MAP);
+try { Object.assign(MAP, JSON.parse(localStorage.getItem('lampara-map') || '{}')); } catch (e) {}
+function gesture(g) {
+  if (state.alert) { setAlert('none'); logLine(GESTURES[g] + ' → quitar aviso'); return; }
+  const a = ACTIONS[MAP[g]] || ACTIONS.none; a[1](); logLine(GESTURES[g] + ' → ' + a[0]);
+}
+function buildMap() {
+  const grid = $('mapGrid'); grid.innerHTML = '';
+  Object.entries(GESTURES).forEach(([g, label]) => {
+    const d = document.createElement('div'); d.className = 'g'; d.innerHTML = label + '<small>' + (g === 'BB' ? 'EBB' : 'E' + g) + '</small>'; grid.appendChild(d);
+    const s = document.createElement('select'); s.setAttribute('aria-label', label);
+    Object.entries(ACTIONS).forEach(([k, v]) => { const o = document.createElement('option'); o.value = k; o.textContent = v[0]; s.appendChild(o); });
+    s.value = MAP[g]; s.onchange = () => { MAP[g] = s.value; try { localStorage.setItem('lampara-map', JSON.stringify(MAP)); } catch (e) {} };
+    grid.appendChild(s);
+  });
+}
+function logLine(s) { const el = $('log'); const t = new Date().toLocaleTimeString(); el.textContent = (t + '  ' + s + '\n' + el.textContent).slice(0, 1600); }
+
+/* botones virtuales: clic = toque, doble clic = doble, mantener = largo */
+function virtualTouch(btn, n) {
+  let down = 0, taps = 0, timer = null, longFired = false;
+  const other = () => (n === 1 ? $('vt2') : $('vt1')).classList.contains('on');
+  btn.addEventListener('pointerdown', e => { e.preventDefault(); btn.classList.add('on'); down = performance.now(); longFired = false;
+    if (other()) { gesture('BB'); longFired = true; taps = 0; return; }
+    setTimeout(() => { if (btn.classList.contains('on') && !longFired && performance.now() - down >= 640) { longFired = true; taps = 0; gesture(n + 'L'); } }, 660); });
+  const up = () => { if (!btn.classList.contains('on')) return; btn.classList.remove('on'); if (longFired) return;
+    taps++; clearTimeout(timer); timer = setTimeout(() => { gesture(n + (taps >= 2 ? 'D' : 'T')); taps = 0; }, 280); };
+  btn.addEventListener('pointerup', up); btn.addEventListener('pointerleave', up);
+}
+
+/* ---------------- interfaz ---------------- */
+function renderCards() {
+  const mk = (box, obj, active, onPick) => { box.innerHTML = ''; Object.entries(obj).forEach(([k, v]) => {
+    const b = document.createElement('button'); b.className = 'card-btn'; b.setAttribute('aria-pressed', String(k === active));
+    b.innerHTML = '<b>' + v.name + '</b><span>' + v.desc + '</span>'; b.onclick = () => onPick(k); box.appendChild(b); }); };
+  mk($('fxCards'), FX, state.scene ? null : state.effect, selectFx);
+  mk($('sceneCards'), SCENES, state.scene, k => selectScene(state.scene === k ? null : k));
+}
+function selectFx(k) { state.effect = k; state.scene = null; renderCards(); }
+function selectScene(k) { state.scene = k; renderCards(); }
+function setPalette(k) { state.palette = k; $('palette').value = k; }
+function setBright(v) { state.bright = v; $('bright').value = v; $('brightOut').textContent = v; sendLine('B' + v); }
+function onSens() { state.sens = +$('sens').value; $('sensOut').textContent = state.sens.toFixed(1); }
+Object.keys(PALETTES).forEach(k => { const o = document.createElement('option'); o.value = o.textContent = k; $('palette').appendChild(o); });
+$('palette').onchange = e => setPalette(e.target.value);
+$('sens').oninput = onSens;
+let brightTimer; $('bright').oninput = e => { state.bright = +e.target.value; $('brightOut').textContent = state.bright; clearTimeout(brightTimer); brightTimer = setTimeout(() => sendLine('B' + state.bright), 120); };
+$('pick').oninput = () => { if (state.palette !== 'Color fijo' && state.scene !== 'fijo') setPalette('Color fijo'); };
+$('btnSerial').onclick = connectSerial;
+$('btnMic').onclick = () => startAudio('mic');
+$('btnSys').onclick = () => startAudio('sys');
+$('focusStart').onclick = () => startFocus(25, 'work');
+$('focusBreak').onclick = () => startFocus(5, 'rest');
+$('focusStop').onclick = () => { state.focus = null; if (state.scene === 'enfoque') selectScene(null); };
+document.querySelectorAll('[data-alert]').forEach(b => b.onclick = () => setAlert(b.dataset.alert));
+if (!('serial' in navigator)) { document.body.classList.add('unsupported'); $('btnSerial').disabled = true; }
+virtualTouch($('vt1'), 1); virtualTouch($('vt2'), 2);
+buildMap(); renderCards();
+
+/* ---------------- lámpara virtual ---------------- */
+const cv = $('lampCanvas'), g2 = cv.getContext('2d');
+function drawLamp(frame) {
+  const W = cv.width, H = cv.height; g2.clearRect(0, 0, W, H);
+  const x0 = 120, x1 = 400, top = 110, bot = 900, baseTop = 920;
+  // base
+  g2.fillStyle = '#4a2f78'; roundRect(70, baseTop + 26, 380, 150, 26); g2.fill();
+  g2.fillStyle = '#9b84c8'; roundRect(64, baseTop, 392, 40, 18); g2.fill();
+  // tapa superior
+  g2.fillStyle = '#1b1b1e'; roundRect(96, top - 40, 328, 50, 18); g2.fill();
+  // lámina: fondo
+  const k = state.bright / 120;
+  const grd = g2.createLinearGradient(x0, 0, x1, 0); grd.addColorStop(0, '#2a2a2c'); grd.addColorStop(0.5, '#3a3a3d'); grd.addColorStop(1, '#2a2a2c');
+  g2.fillStyle = grd; g2.fillRect(x0, top + 10, x1 - x0, bot - top);
+  // luz de cada LED difuminada
+  g2.save(); g2.beginPath(); g2.rect(x0, top + 10, x1 - x0, bot - top); g2.clip(); g2.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < N; i++) {
+    const c = frame[i], y = bot - 30 - i * ((bot - top - 60) / (N - 1)), a = k;
+    const r = g2.createRadialGradient(260, y, 4, 260, y, 150);
+    r.addColorStop(0, `rgba(${c[0]|0},${c[1]|0},${c[2]|0},${0.95 * a})`); r.addColorStop(0.45, `rgba(${c[0]|0},${c[1]|0},${c[2]|0},${0.45 * a})`); r.addColorStop(1, 'rgba(0,0,0,0)');
+    g2.fillStyle = r; g2.fillRect(x0, y - 150, x1 - x0, 300);
+  }
+  g2.restore();
+  // brillo de la curva
+  const sh = g2.createLinearGradient(x0, 0, x1, 0); sh.addColorStop(0, 'rgba(255,255,255,0)'); sh.addColorStop(0.3, 'rgba(255,255,255,.07)'); sh.addColorStop(0.5, 'rgba(255,255,255,0)');
+  g2.fillStyle = sh; g2.fillRect(x0, top + 10, x1 - x0, bot - top);
+  // marcos negros laterales (orejas de la torre)
+  g2.fillStyle = '#141416'; g2.fillRect(x0 - 26, top + 10, 30, bot - top); g2.fillRect(x1 - 4, top + 10, 30, bot - top);
+  // marcas de los touch
+  g2.strokeStyle = 'rgba(255,255,255,.35)'; g2.lineWidth = 3;
+  [210, 310].forEach((cx, j) => { g2.beginPath(); g2.ellipse(cx, top - 16, 22, 7, 0, 0, 7); g2.stroke(); if ($(j ? 'vt2' : 'vt1').classList.contains('on')) { g2.fillStyle = 'rgba(255,122,26,.8)'; g2.fill(); } });
+}
+function roundRect(x, y, w, h, r) { g2.beginPath(); g2.moveTo(x + r, y); g2.arcTo(x + w, y, x + w, y + h, r); g2.arcTo(x + w, y + h, x, y + h, r); g2.arcTo(x, y + h, x, y, r); g2.arcTo(x, y, x + w, y, r); g2.closePath(); }
+
+/* ---------------- ciclo principal ---------------- */
+let lastT = performance.now(), lastSend = 0;
+function loop(t) {
+  const dt = t - lastT; lastT = t;
+  analyse(t);
+  let frame = alertFrame(t);
+  if (!frame) frame = state.scene ? SCENES[state.scene].fn(t, dt) : FX[state.effect].fn(t, dt);
+  if (!state.on && !state.alert) frame = new Array(N).fill(0).map(() => [0, 0, 0]);
+  drawLamp(frame);
+  if (ser.writer && t - lastSend > 33) { lastSend = t; sendFrame(frame); }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
