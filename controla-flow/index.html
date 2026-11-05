@@ -24,7 +24,7 @@
 <header class="topbar">
   <div class="wrap">
     <a class="brand" href="../index.html"><span class="brand-dot"></span>José · Proyectos</a>
-    <nav class="nav"><a href="#proceso">Proceso</a><a href="#controles">Controles</a><a href="#conexiones">Conexiones</a></nav>
+    <nav class="nav"><a href="app.html">App</a><a href="#proceso">Proceso</a><a href="#controles">Controles</a><a href="#conexiones">Conexiones</a></nav>
   </div>
 </header>
 
@@ -36,6 +36,10 @@
         <h1 style="margin-top:12px">CONTROLA FLOW</h1>
         <p class="lead">Una groovebox hecha en casa: un Arduino Uno con pantalla, botonera, joystick, slider y dos perillas, dentro de una caja impresa en 3D. Se conecta por USB y una página web genera el sonido.</p>
         <div class="callout award" style="margin-top:24px"><span class="dot">★</span><p>El proyecto fue destacado y felicitado en la presentación del curso.</p></div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:24px">
+          <a class="btn primary" href="app.html">Abrir la app y tocar</a>
+          <a class="btn" href="#usar">Cómo conectarla</a>
+        </div>
       </div>
       <figure class="figure"><img src="img/render_hero.jpg" alt="Render de CONTROLA FLOW: caja naranja con panel negro, pantalla, joystick, slider, perillas y botonera" width="1600" height="1100"></figure>
     </div>
@@ -118,6 +122,21 @@
           <tr><td>3.3V</td><td>VCC y BL de la pantalla</td><td>5V / GND</td><td>Riel común</td></tr>
         </tbody>
       </table></div>
+    </div>
+  </section>
+<section class="section" id="usar">
+    <div class="wrap">
+      <p class="eyebrow">Usarla</p>
+      <h2 style="margin-top:10px">Conectar la caja y tocar</h2>
+      <ol class="muted" style="line-height:1.8;max-width:760px;margin-top:16px">
+        <li>Conecta la caja al computador con el cable USB.</li>
+        <li>Abre la <a href="app.html">app</a> en <b>Google Chrome</b> o <b>Microsoft Edge</b> (Safari y Firefox no pueden hablar con el Arduino).</li>
+        <li>Aprieta <b>Probar sonido</b> para revisar los parlantes.</li>
+        <li>Aprieta <b>Conectar Arduino</b> y elige el puerto (en Windows aparece como COM3, COM4… o USB-SERIAL CH340). No toques el joystick mientras se conecta: se calibra en ese momento.</li>
+        <li>Listo: el beat parte solo y la página muestra todos los controles.</li>
+      </ol>
+      <p class="muted" style="margin-top:14px;max-width:760px">Si no aparece ningún puerto: prueba otro cable USB (algunos solo cargan), instala el driver CH340 y cierra el Arduino IDE. Si se corta el sonido, recarga la página y vuelve a conectar.</p>
+      <a class="btn primary" href="app.html" style="margin-top:20px;display:inline-block">Abrir la app</a>
     </div>
   </section>
 </main>
