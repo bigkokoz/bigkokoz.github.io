@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Controla Flow</title>
+<style>
+  :root {
+    --bg: #0b0b10; --panel: #15151d; --panel2: #1d1d28; --line: #2a2a38;
+    --txt: #e8e8ee; --dim: #8a8a9a;
+    --kick: #ff4646; --snare: #ffb428; --hat: #50dc78; --synth: #aa6eff;
+    --live: #5ac8ff; --filter: #ff6ec8; --echo: #5ac8ff; --dist: #ff7a3c; --verb: #e8e8ee;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--txt);
+         font: 15px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 20px 16px 40px; }
+  header { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }
+  h1 { font-size: 22px; letter-spacing: .14em; margin: 0; font-weight: 700; }
+  h1 span { color: var(--synth); }
+  button { background: var(--synth); color: #0b0b10; border: 0; border-radius: 10px;
+           padding: 10px 18px; font: inherit; font-weight: 700; cursor: pointer; }
+  button.ghost { background: var(--panel2); color: var(--txt); border: 1px solid var(--line); }
+  button:disabled { opacity: .4; cursor: default; }
+  .status { display: flex; align-items: center; gap: 8px; color: var(--dim); font-size: 14px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: #444; }
+  .dot.on { background: var(--hat); box-shadow: 0 0 10px var(--hat); }
+  .spacer { flex: 1; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .chip { background: var(--panel); border: 1px solid var(--line); border-radius: 999px;
+          padding: 6px 14px; font-size: 13px; color: var(--dim); }
+  .chip b { color: var(--txt); margin-left: 6px; }
+  .grid2 { display: grid; grid-template-columns: 1.6fr 1fr; gap: 14px; }
+  @media (max-width: 760px) { .grid2 { grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+  .card h2 { margin: 0 0 12px; font-size: 12px; letter-spacing: .14em; color: var(--dim); font-weight: 600; }
+  .lanes { display: grid; gap: 8px; }
+  .lane { display: grid; grid-template-columns: 58px repeat(16, 1fr); gap: 4px; align-items: center; }
+  .lane .name { font-size: 11px; letter-spacing: .1em; color: var(--dim); }
+  .cell { aspect-ratio: 1; border-radius: 5px; background: var(--panel2); transition: background .25s; }
+  .cell.q { margin-left: 4px; }
+  .cell.now { outline: 2px solid #fff; outline-offset: 1px; }
+  .lane[data-l="0"] .cell.hit { background: var(--kick); }
+  .lane[data-l="1"] .cell.hit { background: var(--snare); }
+  .lane[data-l="2"] .cell.hit { background: var(--hat); }
+  .lane[data-l="3"] .cell.hit { background: var(--synth); }
+  .lane[data-l="4"] .cell.hit { background: var(--live); }
+  .lane.sel .name { color: var(--txt); font-weight: 700; }
+  canvas { width: 100%; display: block; border-radius: 10px; background: #0f0f15; }
+  .fx { display: grid; gap: 12px; }
+  .meter label { display: flex; justify-content: space-between; font-size: 12px; color: var(--dim);
+                 letter-spacing: .08em; margin-bottom: 4px; }
+  .bar { height: 10px; border-radius: 6px; background: var(--panel2); position: relative; overflow: hidden; }
+  .bar i { position: absolute; top: 0; bottom: 0; left: 0; width: 0; border-radius: 6px; transition: width .06s; }
+  .bar.center::after { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: #fff6; }
+  .help { margin-top: 14px; }
+  .fn { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .fn div { background: #3c3414; color: #ffd65a; border-radius: 8px; padding: 8px 6px;
+            font-size: 12px; text-align: center; font-weight: 600; }
+  .fn div small { display: block; color: #ffd65a99; font-weight: 400; }
+  ul { margin: 10px 0 0; padding-left: 18px; color: var(--dim); font-size: 14px; }
+  ul b { color: var(--txt); font-weight: 600; }
+  .warn { background: #3a1616; border: 1px solid #6a2a2a; color: #ffb4b4; padding: 12px 14px;
+          border-radius: 12px; margin-bottom: 14px; display: none; }
+  .log { font: 12px ui-monospace, Menlo, monospace; color: var(--dim); height: 1.6em; overflow: hidden; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a href="index.html" style="color:var(--dim);text-decoration:none;font-size:13px">← Proyecto</a>
+    <h1>CONTROLA <span>FLOW</span></h1>
+    <div class="status"><div class="dot" id="dot"></div><span id="status">Desconectado</span></div>
+    <div class="spacer"></div>
+    <button class="ghost" id="test">Probar sonido</button>
+    <button id="connect">Conectar Arduino</button>
+  </header>
+
+  <div class="warn" id="warn">Este navegador no puede hablar con el Arduino. Abre esta página en <b>Google Chrome</b> o <b>Microsoft Edge</b> en el computador.</div>
+
+  <div class="chips">
+    <div class="chip">TEMPO<b id="cBpm">–</b></div>
+    <div class="chip">MODO<b id="cMode">–</b></div>
+    <div class="chip">PISTA<b id="cTrack">–</b></div>
+    <div class="chip">PATRÓN<b id="cPat">–</b></div>
+    <div class="chip">SYNTH<b id="cPreset">–</b></div>
+    <div class="chip">PADS<b id="cLive">–</b></div>
+    <div class="chip">KIT<b id="cKit">–</b></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h2>LO QUE ESTÁ SONANDO</h2>
+      <div class="lanes" id="lanes"></div>
+      <div class="log" id="log"></div>
+    </div>
+    <div class="card">
+      <h2>EFECTOS</h2>
+      <div class="fx">
+        <div class="meter"><label>FILTRO <span id="vF">neutro</span></label><div class="bar center"><i id="bF" style="background:var(--filter)"></i></div></div>
+        <div class="meter"><label>ECO <span id="vE">0</span></label><div class="bar"><i id="bE" style="background:var(--echo)"></i></div></div>
+        <div class="meter"><label>DISTORSIÓN <span id="vD">0</span></label><div class="bar"><i id="bD" style="background:var(--dist)"></i></div></div>
+        <div class="meter"><label>REVERB <span id="vR">0</span></label><div class="bar"><i id="bR" style="background:var(--verb)"></i></div></div>
+      </div>
+      <canvas id="scope" height="110" style="margin-top:16px"></canvas>
+    </div>
+  </div>
+
+  <div class="card help">
+    <h2>MANTÉN EL CLICK DEL JOYSTICK + BOTÓN = FUNCIONES</h2>
+    <div class="fn">
+      <div>S1<small>KICK</small></div><div>S2<small>SNARE</small></div><div>S3<small>HAT</small></div><div>S4<small>SYNTH</small></div>
+      <div>S5<small>PLAY / STOP</small></div><div>S6<small>SEQ / LIVE</small></div><div>S7<small>SONIDO −</small></div><div>S8<small>SONIDO +</small></div>
+      <div>S9<small>BORRAR · LIVE: TONO −</small></div><div>S10<small>ESCALA · LIVE: TONO +</small></div><div>S11<small>OCTAVA −</small></div><div>S12<small>OCTAVA +</small></div>
+      <div>S13<small>PATRÓN 1</small></div><div>S14<small>PATRÓN 2</small></div><div>S15<small>PATRÓN 3</small></div><div>S16<small>PATRÓN 4</small></div>
+    </div>
+    <ul>
+      <li><b>Click corto</b>: siguiente pista (SEQ) o siguiente escala (LIVE).</li>
+      <li><b>Pista SYNTH</b>: mantén un paso y mueve el joystick arriba/abajo para cambiar su nota.</li>
+      <li><b>Joystick</b>: izquierda/derecha = filtro, arriba = eco, abajo = distorsión. Vuelve solo al soltar.</li>
+      <li><b>Slider</b> = filtro fijo · <b>Perilla A1</b> = tempo · <b>Perilla A2</b> = reverb.</li>
+      <li><b>SONIDO −/+</b> cambia lo que estás tocando: en una pista de batería el kit (808, acústico, lofi, electro), en SYNTH el sonido del synth y en LIVE el instrumento de los pads.</li>
+      <li>Patrones de fábrica: 1 house · 2 dembow · 3 hip hop · 4 electro. Borra una pista con S9 para armar la tuya.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+// ================= INTERFAZ =================
+const LANES = ["KICK", "SNARE", "HAT", "SYNTH", "LIVE"];
+const PRESETS = ["BAJO", "LEAD", "ÁCIDO", "PLUCK", "PAD", "CAMPANA", "ÓRGANO", "PIANO E"];
+const KITS = ["808", "ACÚSTICO", "LOFI", "ELECTRO"];
+const lanesEl = document.getElementById("lanes");
+const cells = [];
+LANES.forEach((name, l) => {
+  const row = document.createElement("div");
+  row.className = "lane"; row.dataset.l = l;
+  row.innerHTML = `<div class="name">${name}</div>`;
+  cells[l] = [];
+  for (let s = 0; s < 16; s++) {
+    const c = document.createElement("div");
+    c.className = "cell";
+    row.appendChild(c); cells[l].push(c);
+  }
+  lanesEl.appendChild(row);
+});
+const $ = id => document.getElementById(id);
+let curStep = -1, bpm = 110;
+
+function setStep(s) {
+  if (curStep >= 0) cells.forEach(r => r[curStep].classList.remove("now"));
+  curStep = s;
+  cells.forEach(r => { r[s].classList.add("now"); r[s].classList.remove("hit"); });
+}
+function markHit(lane) {
+  const s = curStep < 0 ? 0 : curStep;
+  const c = cells[lane][s];
+  c.classList.add("hit");
+}
+function setMeter(id, v, txt) {
+  $("b" + id).style.width = (v / 127 * 100) + "%";
+  $("v" + id).textContent = txt ?? v;
+}
+function setFilterMeter(v) {
+  const bar = $("bF");
+  if (v === 64) { bar.style.left = "50%"; bar.style.width = "0"; $("vF").textContent = "neutro"; return; }
+  const pct = v / 127 * 100;
+  if (v > 64) { bar.style.left = "50%"; bar.style.width = (pct - 50) + "%"; $("vF").textContent = "agudos"; }
+  else        { bar.style.left = pct + "%"; bar.style.width = (50 - pct) + "%"; $("vF").textContent = "graves"; }
+}
+function log(t) { $("log").textContent = t; }
+
+// ================= AUDIO =================
+let ctx, input, djFilter, distDry, distWet, shaper, echoSend, delay, verbSend, analyser, noiseBuf;
+let preset = 0;
+
+function initAudio() {
+  if (ctx) { ctx.resume(); return; }
+  ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+  input = ctx.createGain();
+  djFilter = ctx.createBiquadFilter();
+  djFilter.type = "lowpass"; djFilter.frequency.value = 20000; djFilter.Q.value = 0.7;
+  input.connect(djFilter);
+
+  shaper = ctx.createWaveShaper(); shaper.oversample = "2x";
+  distDry = ctx.createGain(); distWet = ctx.createGain(); distWet.gain.value = 0;
+  const post = ctx.createGain();
+  djFilter.connect(distDry); distDry.connect(post);
+  djFilter.connect(shaper); shaper.connect(distWet); distWet.connect(post);
+
+  const comp = ctx.createDynamicsCompressor();
+  comp.threshold.value = -14; comp.ratio.value = 4;
+  const master = ctx.createGain(); master.gain.value = 0.85;
+  post.connect(comp);
+
+  // Eco (delay con retroalimentación)
+  echoSend = ctx.createGain(); echoSend.gain.value = 0;
+  delay = ctx.createDelay(2);
+  const fb = ctx.createGain(); fb.gain.value = 0.55;
+  const tone = ctx.createBiquadFilter(); tone.type = "lowpass"; tone.frequency.value = 2800;
+  post.connect(echoSend); echoSend.connect(delay); delay.connect(tone);
+  tone.connect(fb); fb.connect(delay); tone.connect(comp);
+  setDelayTime();
+
+  // Reverb (convolución con impulso generado)
+  verbSend = ctx.createGain(); verbSend.gain.value = 0;
+  const verb = ctx.createConvolver();
+  verb.buffer = makeImpulse(2.8);
+  post.connect(verbSend); verbSend.connect(verb); verb.connect(comp);
+
+  analyser = ctx.createAnalyser(); analyser.fftSize = 1024;
+  comp.connect(master); master.connect(analyser); analyser.connect(ctx.destination);
+
+  noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+  const d = noiseBuf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  drawScope();
+}
+
+function makeImpulse(sec) {
+  const len = ctx.sampleRate * sec, buf = ctx.createBuffer(2, len, ctx.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = buf.getChannelData(ch);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+  }
+  return buf;
+}
+function makeCurve(k) {
+  const n = 1024, c = new Float32Array(n);
+  for (let i = 0; i < n; i++) { const x = i * 2 / n - 1; c[i] = (1 + k) * x / (1 + k * Math.abs(x)); }
+  return c;
+}
+function setDelayTime() { if (delay) delay.delayTime.setTargetAtTime(60 / bpm * 0.75, ctx.currentTime, 0.05); }
+const mtof = n => 440 * Math.pow(2, (n - 69) / 12);
+
+// ---------- Batería: 4 kits ----------
+let kit = 0, livePreset = 7;
+function env(g, t, peak, dur, attack = 0.002) {
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(Math.max(peak, 0.0002), t + attack);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+}
+function kitOut() {           // LOFI pasa todo por un filtro opaco
+  if (kit !== 2) return input;
+  const f = ctx.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 3200; f.connect(input); return f;
+}
+function noise() { const s = ctx.createBufferSource(); s.buffer = noiseBuf; return s; }
+function kick(v) {
+  const t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain(), out = kitOut();
+  const P = [[160, 40, 0.12, 0.65], [120, 55, 0.05, 0.25], [100, 48, 0.08, 0.35], [220, 45, 0.04, 0.3]][kit];
+  o.frequency.setValueAtTime(P[0], t); o.frequency.exponentialRampToValueAtTime(P[1], t + P[2]);
+  env(g, t, v * (kit === 3 ? 1.3 : 1), P[3]);
+  if (kit === 3) { const sh = ctx.createWaveShaper(); sh.curve = makeCurve(8); o.connect(sh); sh.connect(g); } else o.connect(g);
+  g.connect(out); o.start(t); o.stop(t + P[3] + 0.05);
+  if (kit === 1) {            // click del parche
+    const n = noise(), hp = ctx.createBiquadFilter(), ng = ctx.createGain();
+    hp.type = "highpass"; hp.frequency.value = 2500; env(ng, t, v * 0.25, 0.02);
+    n.connect(hp); hp.connect(ng); ng.connect(out); n.start(t); n.stop(t + 0.03);
+  }
+}
+function snare(v) {
+  const t = ctx.currentTime, out = kitOut();
+  const bursts = kit === 0 || kit === 3 ? [0, 0.011, 0.022] : [0];       // 808/electro = palmas
+  bursts.forEach((d, i) => {
+    const n = noise(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    f.type = kit === 1 ? "bandpass" : "highpass";
+    f.frequency.value = [1100, 1900, 900, 2600][kit];
+    const last = i === bursts.length - 1;
+    env(g, t + d, v * (kit === 2 ? 0.45 : 0.7), last ? [0.22, 0.18, 0.15, 0.12][kit] : 0.012);
+    n.connect(f); f.connect(g); g.connect(out); n.start(t + d); n.stop(t + d + 0.3);
+  });
+  if (kit === 1 || kit === 2) {   // cuerpo del tambor
+    const o = ctx.createOscillator(), og = ctx.createGain();
+    o.type = "triangle"; o.frequency.setValueAtTime(190, t); o.frequency.exponentialRampToValueAtTime(140, t + 0.1);
+    env(og, t, v * 0.5, 0.12); o.connect(og); og.connect(out); o.start(t); o.stop(t + 0.15);
+  }
+}
+function hat(v) {
+  const t = ctx.currentTime, out = kitOut(), g = ctx.createGain(), f = ctx.createBiquadFilter();
+  f.type = kit === 1 ? "bandpass" : "highpass"; f.frequency.value = [7500, 9000, 6000, 8000][kit];
+  env(g, t, v * [0.35, 0.3, 0.2, 0.3][kit], [0.05, 0.09, 0.04, 0.035][kit]);
+  if (kit === 3) {            // hat metálico tipo 909
+    [205, 305, 365, 415, 535, 800].forEach(fr => {
+      const o = ctx.createOscillator(); o.type = "square"; o.frequency.value = fr * 1.7;
+      o.connect(f); o.start(t); o.stop(t + 0.06);
+    });
+  } else { const n = noise(); n.connect(f); n.start(t); n.stop(t + 0.12); }
+  f.connect(g); g.connect(out);
+}
+
+// ---------- 8 instrumentos (synth secuenciado y pads LIVE usan la misma lista) ----------
+function makeVoice(p, note, v) {
+  const t = ctx.currentTime, out = ctx.createGain(), f = ctx.createBiquadFilter();
+  f.type = "lowpass"; f.connect(out); out.connect(input);
+  const oscs = [];
+  const add = (type, freq, gain, detune = 0, dest = f) => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type; o.frequency.value = freq; o.detune.value = detune; g.gain.value = gain;
+    o.connect(g); g.connect(dest); o.start(t); oscs.push(o); return o;
+  };
+  let rel = 0.12;
+  const A = (peak, a) => { out.gain.setValueAtTime(0, t); out.gain.linearRampToValueAtTime(peak, t + a); };
+  switch (p) {
+    case 0: { const fr = mtof(note - 12);                                     // BAJO
+      add("sawtooth", fr, 0.5); add("square", fr / 2, 0.4); f.Q.value = 4;
+      f.frequency.setValueAtTime(1400, t); f.frequency.exponentialRampToValueAtTime(250, t + 0.2);
+      A(v * 0.7, 0.005); break; }
+    case 1: { const fr = mtof(note + 12);                                     // LEAD
+      add("sawtooth", fr, 0.35, -9); add("sawtooth", fr, 0.35, 9); add("square", fr / 2, 0.15);
+      f.Q.value = 2; f.frequency.value = 3200; A(v * 0.45, 0.03); rel = 0.25; break; }
+    case 2: { add("sawtooth", mtof(note), 0.7); f.Q.value = 18;               // ÁCIDO
+      f.frequency.setValueAtTime(4500, t); f.frequency.exponentialRampToValueAtTime(180, t + 0.16);
+      A(v * 0.5, 0.004); break; }
+    case 3: { const fr = mtof(note + 12);                                     // PLUCK
+      add("triangle", fr, 0.6); add("square", fr * 2, 0.08); f.Q.value = 1;
+      f.frequency.setValueAtTime(5000, t); f.frequency.exponentialRampToValueAtTime(600, t + 0.3);
+      out.gain.setValueAtTime(v * 0.6, t); out.gain.exponentialRampToValueAtTime(0.001, t + 0.6); rel = 0.4; break; }
+    case 4: { const fr = mtof(note + 12);                                     // PAD
+      [-12, 0, 12].forEach(d => add("sawtooth", fr, 0.22, d)); add("sine", fr / 2, 0.25);
+      f.Q.value = 1; f.frequency.setValueAtTime(600, t); f.frequency.linearRampToValueAtTime(2200, t + 0.8);
+      A(v * 0.4, 0.35); rel = 0.9; break; }
+    case 5: { const fr = mtof(note + 24);                                     // CAMPANA (FM)
+      f.frequency.value = 9000;
+      const car = add("sine", fr, 0.7);
+      const mod = ctx.createOscillator(), mg = ctx.createGain();
+      mod.frequency.value = fr * 3.5; mg.gain.setValueAtTime(fr * 2.5, t); mg.gain.exponentialRampToValueAtTime(1, t + 1.2);
+      mod.connect(mg); mg.connect(car.frequency); mod.start(t); oscs.push(mod);
+      out.gain.setValueAtTime(v * 0.55, t); out.gain.exponentialRampToValueAtTime(0.001, t + 2.0); rel = 1.2; break; }
+    case 6: { const fr = mtof(note);                                          // ÓRGANO
+      [[1, 0.35], [2, 0.25], [3, 0.12], [4, 0.1], [8, 0.05]].forEach(([h, g]) => add("sine", fr * h, g));
+      f.frequency.value = 6000; A(v * 0.45, 0.01); rel = 0.08; break; }
+    default: { const fr = mtof(note + 12);                                    // PIANO E
+      const car = add("sine", fr, 0.6); add("triangle", fr, 0.15, 4);
+      const mod = ctx.createOscillator(), mg = ctx.createGain();
+      mod.frequency.value = fr; mg.gain.setValueAtTime(fr * 1.2, t); mg.gain.exponentialRampToValueAtTime(fr * 0.05, t + 0.5);
+      mod.connect(mg); mg.connect(car.frequency); mod.start(t); oscs.push(mod);
+      f.frequency.value = 5000;
+      out.gain.setValueAtTime(v * 0.6, t); out.gain.exponentialRampToValueAtTime(v * 0.08, t + 1.6); rel = 0.35; }
+  }
+  return { oscs, out, rel };
+}
+function releaseVoice(voice) {
+  const t = ctx.currentTime;
+  voice.out.gain.cancelScheduledValues(t);
+  voice.out.gain.setValueAtTime(Math.max(voice.out.gain.value, 0.0002), t);
+  voice.out.gain.exponentialRampToValueAtTime(0.0001, t + voice.rel);
+  voice.oscs.forEach(o => o.stop(t + voice.rel + 0.03));
+}
+const synthVoices = new Map(), liveVoices = new Map();
+function synthOn(note, v) { synthOff(note); synthVoices.set(note, makeVoice(preset, note, v)); }
+function synthOff(note) { const x = synthVoices.get(note); if (x) { releaseVoice(x); synthVoices.delete(note); } }
+function liveOn(note, v) { liveOff(note); liveVoices.set(note, makeVoice(livePreset, note, v)); }
+function liveOff(note) { const x = liveVoices.get(note); if (x) { releaseVoice(x); liveVoices.delete(note); } }
+
+// ---------- Efectos ----------
+function setFilter(v) {
+  const t = ctx.currentTime;
+  if (v < 60) {
+    djFilter.type = "lowpass";
+    djFilter.frequency.setTargetAtTime(120 * Math.pow(20000 / 120, v / 60), t, 0.02);
+    djFilter.Q.setTargetAtTime(5, t, 0.05);
+  } else if (v > 68) {
+    djFilter.type = "highpass";
+    djFilter.frequency.setTargetAtTime(20 * Math.pow(6000 / 20, (v - 68) / 59), t, 0.02);
+    djFilter.Q.setTargetAtTime(5, t, 0.05);
+  } else {
+    djFilter.type = "lowpass";
+    djFilter.frequency.setTargetAtTime(20000, t, 0.02);
+    djFilter.Q.setTargetAtTime(0.7, t, 0.05);
+  }
+  setFilterMeter(v);
+}
+function setEcho(v) { echoSend.gain.setTargetAtTime(v / 127 * 0.9, ctx.currentTime, 0.02); setMeter("E", v); }
+function setDist(v) {
+  const t = ctx.currentTime, a = v / 127;
+  if (v > 0) shaper.curve = makeCurve(2 + a * 60);
+  distWet.gain.setTargetAtTime(a * 0.8, t, 0.02);
+  distDry.gain.setTargetAtTime(1 - a * 0.7, t, 0.02);
+  setMeter("D", v);
+}
+function setVerb(v) { verbSend.gain.setTargetAtTime(v / 127 * 0.8, ctx.currentTime, 0.05); setMeter("R", v); }
+
+// ================= MIDI =================
+let status = 0, data = [];
+function onByte(b) {
+  if (b >= 0x80) { status = b; data = []; return; }
+  if (!status) return;
+  data.push(b);
+  const type = status & 0xF0, need = (type === 0xC0 || type === 0xD0) ? 1 : 2;
+  if (data.length < need) return;
+  handle(type, status & 0x0F, data[0], data[1]);
+  data = [];
+}
+
+function handle(type, ch, a, b) {
+  if (!ctx) return;
+  if (type === 0x90 && b > 0) {
+    const v = b / 127;
+    if (ch === 9) {
+      if (a === 36) { kick(v); markHit(0); }
+      else if (a === 38) { snare(v); markHit(1); }
+      else if (a === 42) { hat(v); markHit(2); }
+    } else if (ch === 0) { synthOn(a, v); markHit(3); }
+    else if (ch === 1) { liveOn(a, v); markHit(4); }
+    log(`nota ${a} · canal ${ch + 1}`);
+  } else if (type === 0x80 || (type === 0x90 && b === 0)) {
+    if (ch === 0) synthOff(a);
+    else if (ch === 1) liveOff(a);
+  } else if (type === 0xB0) {
+    if (ch === 15) {
+      if (a === 3) { bpm = b + 60; $("cBpm").textContent = bpm; setDelayTime(); }
+      else if (a === 4) setStep(b);
+      else if (a === 5) {
+        $("cTrack").textContent = LANES[b];
+        document.querySelectorAll(".lane").forEach((r, i) => r.classList.toggle("sel", i === b));
+      }
+      else if (a === 6) $("cMode").textContent = b ? "LIVE" : "SEQ";
+      else if (a === 7) $("cPat").textContent = b + 1;
+      else if (a === 8) { preset = b; $("cPreset").textContent = PRESETS[b]; }
+      else if (a === 9) { livePreset = b; $("cLive").textContent = PRESETS[b]; }
+      else if (a === 10) { kit = b; $("cKit").textContent = KITS[b]; }
+    } else {
+      if (a === 74) setFilter(b);
+      else if (a === 12) setEcho(b);
+      else if (a === 13) setDist(b);
+      else if (a === 91) setVerb(b);
+    }
+  }
+}
+
+// ================= SERIAL =================
+let port, reader;
+async function connect() {
+  initAudio();
+  try {
+    port = await navigator.serial.requestPort();
+    await port.open({ baudRate: 115200 });
+  } catch (e) {
+    $("status").textContent = e.name === "NotFoundError" ? "No elegiste puerto" :
+      "No se pudo abrir: ¿está abierto el Monitor Serie del Arduino IDE?";
+    return;
+  }
+  $("dot").classList.add("on");
+  $("status").textContent = "Conectado";
+  $("connect").textContent = "Conectado"; $("connect").disabled = true;
+  try {
+    reader = port.readable.getReader();
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      for (const byte of value) onByte(byte);
+    }
+  } catch (e) { /* desconectado */ }
+  $("dot").classList.remove("on");
+  $("status").textContent = "Se desconectó el Arduino";
+  $("connect").textContent = "Conectar Arduino"; $("connect").disabled = false;
+}
+
+$("connect").onclick = connect;
+$("test").onclick = () => {
+  initAudio();
+  const seq = [[9,36],[9,42],[9,38],[9,42],[0,48],[0,51],[0,55]];
+  seq.forEach(([ch, n], i) => setTimeout(() => {
+    handle(0x90, ch, n, 110);
+    setTimeout(() => handle(0x80, ch, n, 0), 150);
+  }, i * 180));
+};
+if (!("serial" in navigator)) { $("warn").style.display = "block"; $("connect").disabled = true; }
+
+// ================= OSCILOSCOPIO =================
+function drawScope() {
+  const cv = $("scope"), g = cv.getContext("2d");
+  const buf = new Uint8Array(analyser.fftSize);
+  function frame() {
+    cv.width = cv.clientWidth * devicePixelRatio; cv.height = 110 * devicePixelRatio;
+    analyser.getByteTimeDomainData(buf);
+    g.clearRect(0, 0, cv.width, cv.height);
+    g.lineWidth = 2 * devicePixelRatio; g.strokeStyle = "#aa6eff";
+    g.beginPath();
+    for (let i = 0; i < buf.length; i++) {
+      const x = i / buf.length * cv.width, y = buf[i] / 255 * cv.height;
+      i ? g.lineTo(x, y) : g.moveTo(x, y);
+    }
+    g.stroke();
+    requestAnimationFrame(frame);
+  }
+  frame();
+}
+</script>
+</body>
+</html>

@@ -3,73 +3,144 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>José · Proyectos</title>
-<meta name="description" content="Proyectos de José: objetos con Arduino, fabricación digital e interfaces web que puedes abrir y usar.">
-<meta property="og:title" content="José · Proyectos">
-<meta property="og:image" content="assets/projects/lampara-sonido/thumb.jpg">
+<title>CONTROLA FLOW · José</title>
+<meta name="description" content="Groovebox casero con Arduino Uno: secuenciador de 16 pasos, pantalla, joystick, slider y perillas en una caja impresa en 3D.">
+<meta property="og:title" content="CONTROLA FLOW">
+<meta property="og:image" content="img/render_hero.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/site.css">
+<link rel="stylesheet" href="../css/site.css">
 <style>
-  .intro{padding:88px 0 48px}
-  .intro h1{font-size:clamp(2.6rem,6vw,4.4rem)}
-  .intro .lead{font-size:clamp(1.05rem,2vw,1.3rem);color:var(--muted);max-width:720px;margin-top:20px}
-  .feature{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:0;background:var(--surface);border:1px solid var(--line);border-radius:22px;overflow:hidden;margin-bottom:22px;transition:border-color .2s}
-  .feature:hover{border-color:var(--line-2)}
-  .feature .media{display:block;background:#15171c;min-height:100%}
-  .feature .media img{width:100%;height:100%;object-fit:cover;aspect-ratio:16/10}
-  .feature .body{padding:34px;display:flex;flex-direction:column;gap:14px;justify-content:center}
-  .feature h2{font-size:clamp(1.6rem,3vw,2.2rem)}
-  .feature p{color:var(--muted)}
-  .feature:nth-of-type(even){grid-template-columns:minmax(0,1fr) minmax(0,1.25fr)}
-  .feature:nth-of-type(even) .media{order:2}
-  @media (max-width:860px){.feature,.feature:nth-of-type(even){grid-template-columns:minmax(0,1fr)}.feature:nth-of-type(even) .media{order:0}}
-  .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
-  @media (max-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-  @media (max-width:600px){.grid{grid-template-columns:minmax(0,1fr)}}
-  .card{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;transition:border-color .2s,transform .2s}
-  .card:hover{border-color:var(--line-2);transform:translateY(-3px)}
-  .card .media img,.card .fallback{width:100%;aspect-ratio:16/10;object-fit:cover;display:block}
-  .fallback{display:grid!important;place-items:center;font:700 2.2rem var(--font);color:#fff;letter-spacing:.04em}
-  .card .body{padding:20px;display:flex;flex-direction:column;gap:10px;flex:1}
-  .card h3{font-size:1.15rem}
-  .card p{color:var(--muted);font-size:.92rem;line-height:1.5}
-  .card .btn-row{margin-top:auto;padding-top:6px}
-  .meta-line{font:500 .74rem var(--mono);color:var(--faint);letter-spacing:.06em;text-transform:uppercase}
-  main.wrap{padding-bottom:72px}
-  .sec-title{display:flex;justify-content:space-between;align-items:end;gap:12px;margin:56px 0 20px}
-  .load-error{color:#ff8a8a;border:1px solid rgba(255,90,90,.3);background:rgba(255,90,90,.08);border-radius:12px;padding:14px 18px}
-  dialog{background:var(--surface);color:var(--text);border:1px solid var(--line-2);border-radius:18px;padding:0;max-width:760px;width:calc(100% - 32px)}
-  dialog::backdrop{background:rgba(0,0,0,.7)}
-  dialog img{width:100%;aspect-ratio:16/10;object-fit:cover}
-  dialog .body{padding:24px;display:grid;gap:12px}
+  .hero-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:40px;align-items:center}
+  @media (max-width:900px){.hero-grid{grid-template-columns:minmax(0,1fr)}}
+  .photos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+  .photos img{border-radius:12px;border:1px solid var(--line);width:100%;height:100%;object-fit:cover;aspect-ratio:4/5}
+  @media (max-width:760px){.photos{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .award{display:flex;gap:14px;align-items:center}
+  .award .dot{width:38px;height:38px;border-radius:50%;background:rgba(255,122,26,.15);border:1px solid rgba(255,122,26,.5);display:grid;place-items:center;color:var(--accent);font-weight:700;flex:none}
 </style>
 </head>
 <body>
 <header class="topbar">
   <div class="wrap">
-    <a class="brand" href="./"><span class="brand-dot"></span><span id="brandName">José</span> · Proyectos</a>
-    <nav class="nav"><a href="#destacados">Destacados</a><a href="#todos">Todos</a><a id="ghLink" href="https://github.com/bigkokoz" target="_blank" rel="noopener">GitHub</a></nav>
+    <a class="brand" href="../index.html"><span class="brand-dot"></span>José · Proyectos</a>
+    <nav class="nav"><a href="app.html">App</a><a href="#proceso">Proceso</a><a href="#controles">Controles</a><a href="#conexiones">Conexiones</a></nav>
   </div>
 </header>
 
-<main class="wrap">
-  <section class="intro">
-    <p class="eyebrow" id="siteLocation">Santiago, Chile</p>
-    <h1 id="siteTitle">José</h1>
-    <p class="lead" id="siteTagline"></p>
-    <p class="muted" style="margin-top:14px;font-size:.95rem">Los proyectos con <b style="color:var(--text)">Abrir app</b> funcionan en el navegador: algunos se conectan a su objeto por USB.</p>
+<main>
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <p class="eyebrow">Taller de Interfaces · UAI · 2026</p>
+        <h1 style="margin-top:12px">CONTROLA FLOW</h1>
+        <p class="lead">Una groovebox hecha en casa: un Arduino Uno con pantalla, botonera, joystick, slider y dos perillas, dentro de una caja impresa en 3D. Se conecta por USB y una página web genera el sonido.</p>
+        <div class="callout award" style="margin-top:24px"><span class="dot">★</span><p>El proyecto fue destacado y felicitado en la presentación del curso.</p></div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:24px">
+          <a class="btn primary" href="app.html">Abrir la app y tocar</a>
+          <a class="btn" href="#usar">Cómo conectarla</a>
+        </div>
+      </div>
+      <figure class="figure"><img src="img/render_hero.jpg" alt="Render de CONTROLA FLOW: caja naranja con panel negro, pantalla, joystick, slider, perillas y botonera" width="1600" height="1100"></figure>
+    </div>
+    <div class="wrap">
+      <dl class="hero-meta">
+        <div><dt>Tipo</dt><dd>Controlador MIDI / groovebox</dd></div>
+        <div><dt>Música</dt><dd>16 pasos · 8 instrumentos · 4 kits</dd></div>
+        <div><dt>Caja</dt><dd>150 × 88 mm, cuña de 10°</dd></div>
+        <div><dt>Material</dt><dd>PLA naranjo y negro</dd></div>
+        <div><dt>Electrónica</dt><dd>Arduino Uno + 6 controles</dd></div>
+      </dl>
+    </div>
   </section>
 
-  <p id="loadError" class="load-error" hidden>No se pudieron cargar los proyectos. Recarga la página.</p>
-  <section id="destacados"></section>
-  <div class="sec-title" id="todosHead"><h2 id="todos">Otros proyectos</h2></div>
-  <section class="grid" id="grid"></section>
+  <section class="section">
+    <div class="wrap">
+      <div class="photos">
+        <img src="img/escritorio.jpg" alt="CONTROLA FLOW terminado sobre el escritorio" loading="lazy">
+        <img src="img/armado.jpg" alt="Panel con la pantalla encendida mostrando el secuenciador" loading="lazy">
+        <img src="img/interior.jpg" alt="Interior de la caja con el Arduino, el joystick y el cableado" loading="lazy">
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="funciona">
+    <div class="wrap">
+      <div class="section-head"><p class="eyebrow">Cómo funciona</p><h2>El Arduino toca, la página suena</h2>
+        <p>El Arduino lee los controles, dibuja el secuenciador en la pantalla y manda mensajes por USB a 115 200 baud. Una página web los recibe con Web Serial y genera los sonidos con Web Audio, así que funciona en cualquier computador sin instalar nada.</p></div>
+      <div class="grid-2">
+        <figure class="figure"><img src="img/render_explode.jpg" alt="Despiece de CONTROLA FLOW con sus componentes" loading="lazy"><figcaption>Despiece: cuerpo en cuña, Arduino y joystick adentro, chasis con los controles arriba.</figcaption></figure>
+        <div style="display:grid;gap:20px;align-content:start">
+          <figure class="figure"><img src="img/render_top.jpg" alt="Vista superior del panel" loading="lazy"><figcaption>Panel visto de frente: los textos naranjos van impresos en la primera capa con la AMS.</figcaption></figure>
+          <figure class="figure"><img src="img/componentes.jpg" alt="Componentes antes del montaje: pantalla, joystick, slider, perillas y botonera" loading="lazy" style="aspect-ratio:16/10;object-fit:cover"><figcaption>Los componentes antes de diseñar la caja.</figcaption></figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="proceso">
+    <div class="wrap">
+      <div class="section-head"><p class="eyebrow">Proceso</p><h2>Medir, modelar, imprimir y corregir</h2><p>La caja se diseñó alrededor de las medidas reales de cada componente y se corrigió después de cada impresión.</p></div>
+      <div class="timeline">
+        <div class="step"><span class="tag">01 · MEDIDAS</span><div><h3>Cada componente medido a mano</h3><p>Pantalla de 62 × 37 mm, botonera de 43,5 × 39 mm con 10 mm entre botones, joystick de 34 × 25,5 mm, slider de 74,85 mm con 64 mm de recorrido y perillas con rosca de 5,5 mm.</p></div></div>
+        <div class="step"><span class="tag">02 · FORMA</span><div><h3>Cuña de 10° hacia el usuario</h3><p>El panel se inclina para que la pantalla y los controles queden de frente. Mide 43 mm de alto adelante y 58 mm atrás, con el USB del Arduino saliendo por la parte trasera.</p></div></div>
+        <div class="step"><span class="tag">03 · MODELO</span><div><h3>Caja paramétrica en tres capas</h3><p>Cuerpo, chasis de 9 mm donde se montan los componentes y tapa de 2,4 mm. Un script en CadQuery genera las piezas: al cambiar una medida, todo se regenera.</p><figure class="figure" style="margin-top:14px;max-width:520px"><img src="img/panel_prueba.jpg" alt="Prueba del panel con la pantalla, el slider y la botonera" loading="lazy"><figcaption>Primera prueba del panel con los componentes reales.</figcaption></figure></div></div>
+        <div class="step"><span class="tag">04 · CORRECCIONES</span><div><h3>Lo que enseñó la primera impresión</h3><p>El jack de alimentación chocaba con un pilar, la pantalla quedaba suelta y el panel necesitaba apoyo bajo la botonera. Los pilares se colgaron de la pared con una rampa de 45°, se ajustó el marco de la pantalla y se agregó un canal de 31 mm para los cables de las perillas.</p></div></div>
+        <div class="step"><span class="tag">05 · TERMINACIÓN</span><div><h3>Textos en dos colores</h3><p>TEMPO, REVERB, FILTRO, PASA ALTOS, PASA BAJOS y CONTROLA FLOW van embutidos en naranjo en la cara negra, impresos en la misma pieza con la AMS de la Bambu Lab X1C.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="controles">
+    <div class="wrap">
+      <div class="section-head"><p class="eyebrow">Controles</p><h2>Qué hace cada cosa</h2></div>
+      <div class="table-wrap"><table class="spec">
+        <thead><tr><th>Control</th><th>Componente</th><th>Función</th></tr></thead>
+        <tbody>
+          <tr><td>Botonera 4 × 4</td><td>Matriz de 16 pulsadores</td><td>Modo SEQ: prende y apaga los 16 pasos de la pista. Modo LIVE: 16 notas de la escala.</td></tr>
+          <tr><td>Pantalla</td><td>TFT 2,0" ST7789 (SPI)</td><td>Muestra la pista, los pasos, el instrumento y el BPM.</td></tr>
+          <tr><td>Joystick</td><td>KY-023</td><td>Cambia la nota de un paso, controla el eco y, con el clic, play y cambio de modo.</td></tr>
+          <tr><td>Slider</td><td>Potenciómetro lineal 10 kΩ</td><td>Filtro tipo DJ: centro neutro, abajo graves, arriba agudos.</td></tr>
+          <tr><td>Perilla TEMPO</td><td>Potenciómetro B10K</td><td>Velocidad de 60 a 187 BPM.</td></tr>
+          <tr><td>Perilla REVERB</td><td>Potenciómetro B10K</td><td>Cantidad de reverberación.</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <section class="section" id="conexiones">
+    <div class="wrap">
+      <div class="section-head"><p class="eyebrow">Conexiones</p><h2>20 pines del Uno en uso</h2><p>D0 y D1 quedan libres para el USB. Todos los 5 V y GND van a un riel común.</p></div>
+      <div class="table-wrap"><table class="spec">
+        <thead><tr><th>Arduino</th><th>Va a</th><th>Arduino</th><th>Va a</th></tr></thead>
+        <tbody>
+          <tr><td>D2 – D5</td><td>Botonera C4, C3, C2, C1</td><td>A0</td><td>Slider (cursor)</td></tr>
+          <tr><td>D6 – D8</td><td>Botonera R1, R2, R3</td><td>A1 / A2</td><td>Perillas tempo y reverb</td></tr>
+          <tr><td>D12</td><td>Botonera R4</td><td>A3 / A4</td><td>Joystick X / Y</td></tr>
+          <tr><td>D9 / D10</td><td>Pantalla DC / CS</td><td>A5</td><td>Clic del joystick</td></tr>
+          <tr><td>D11 / D13</td><td>Pantalla SDA / SCL</td><td>RESET</td><td>RST de la pantalla</td></tr>
+          <tr><td>3.3V</td><td>VCC y BL de la pantalla</td><td>5V / GND</td><td>Riel común</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </section>
+<section class="section" id="usar">
+    <div class="wrap">
+      <p class="eyebrow">Usarla</p>
+      <h2 style="margin-top:10px">Conectar la caja y tocar</h2>
+      <ol class="muted" style="line-height:1.8;max-width:760px;margin-top:16px">
+        <li>Conecta la caja al computador con el cable USB.</li>
+        <li>Abre la <a href="app.html">app</a> en <b>Google Chrome</b> o <b>Microsoft Edge</b> (Safari y Firefox no pueden hablar con el Arduino).</li>
+        <li>Aprieta <b>Probar sonido</b> para revisar los parlantes.</li>
+        <li>Aprieta <b>Conectar Arduino</b> y elige el puerto (en Windows aparece como COM3, COM4… o USB-SERIAL CH340). No toques el joystick mientras se conecta: se calibra en ese momento.</li>
+        <li>Listo: el beat parte solo y la página muestra todos los controles.</li>
+      </ol>
+      <p class="muted" style="margin-top:14px;max-width:760px">Si no aparece ningún puerto: prueba otro cable USB (algunos solo cargan), instala el driver CH340 y cierra el Arduino IDE. Si se corta el sonido, recarga la página y vuelve a conectar.</p>
+      <a class="btn primary" href="app.html" style="margin-top:20px;display:inline-block">Abrir la app</a>
+    </div>
+  </section>
 </main>
 
-<dialog id="detail"><div id="detailInner"></div></dialog>
-
-<footer class="site-foot"><div class="wrap"><span id="footName">José</span><span>Hecho con HTML, CSS y JavaScript · publicado en GitHub Pages</span></div></footer>
-<script src="js/app.js" defer></script>
+<footer class="site-foot"><div class="wrap"><span>José · Diseño e ingeniería · Santiago, Chile</span><a href="../index.html">← Todos los proyectos</a></div></footer>
 </body>
 </html>
