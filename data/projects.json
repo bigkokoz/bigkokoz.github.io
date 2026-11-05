@@ -19,7 +19,13 @@
       "cardExcerpt": "Torre de 9 LEDs que escucha el audio del computador y lo convierte en luz. Tiene botones touch y avisa cuando Claude necesita tu respuesta.",
       "description": "El navegador analiza el micrófono o el audio del computador y le manda al Arduino el color de cada LED 30 veces por segundo. Una lámina impresa plana se curva dentro de la torre y difumina la luz.",
       "year": 2026,
-      "tags": ["Arduino", "WS2812B", "Web Serial", "Web Audio", "Impresión 3D"],
+      "tags": [
+        "Arduino",
+        "WS2812B",
+        "Web Serial",
+        "Web Audio",
+        "Impresión 3D"
+      ],
       "role": "Proyecto en equipo con Pedro Claro y J. Domingo Pastorino",
       "thumb": "assets/projects/lampara-sonido/thumb.jpg",
       "page": "lampara/",
@@ -36,11 +42,17 @@
       "cardExcerpt": "Secuenciador de 16 pasos con pantalla, joystick, slider y perillas en una caja impresa en 3D. Destacado en la presentación del curso.",
       "description": "Un Arduino Uno lee los controles y dibuja el secuenciador; una página web genera el sonido. Caja paramétrica en cuña de 10° impresa en dos colores.",
       "year": 2026,
-      "tags": ["Arduino", "MIDI", "CadQuery", "Impresión 3D"],
+      "tags": [
+        "Arduino",
+        "MIDI",
+        "CadQuery",
+        "Impresión 3D"
+      ],
       "role": "Diseño, modelado, electrónica y software",
       "thumb": "assets/projects/controla-flow/thumb.jpg",
       "page": "controla-flow/",
-      "links": []
+      "links": [],
+      "app": "controla-flow/app.html"
     },
     {
       "id": "aves-de-chile",
@@ -51,11 +63,19 @@
       "cardExcerpt": "Plataforma para identificar aves de Chile por su canto, apariencia y nombre, con modo estudio y juego con puntaje.",
       "description": "Sitio 100% estático (HTML, CSS, JS) para aprender a reconocer aves de Chile. Incluye modo estudio, un juego con puntaje por precisión y un panel para cargar nuevas aves.",
       "year": 2026,
-      "tags": ["JavaScript", "Juego educativo"],
+      "tags": [
+        "JavaScript",
+        "Juego educativo"
+      ],
       "role": "Diseño y desarrollo",
       "thumb": "assets/projects/aves-de-chile/thumb.png",
       "app": "https://bigkokoz.github.io/Aves-de-Chile/",
-      "links": [{ "label": "Abrir", "url": "https://bigkokoz.github.io/Aves-de-Chile/" }]
+      "links": [
+        {
+          "label": "Abrir",
+          "url": "https://bigkokoz.github.io/Aves-de-Chile/"
+        }
+      ]
     },
     {
       "id": "pruebas-de-audio",
@@ -66,11 +86,19 @@
       "cardExcerpt": "Analizador de audio en vivo y dos juegos que responden a tu voz y a tu tono.",
       "description": "Experimentos con la Web Audio API y la Web Speech API: un analizador de frecuencia y afinación, un juego de notas musicales y un duelo de tanques controlado por voz.",
       "year": 2026,
-      "tags": ["p5.js", "Web Audio API"],
+      "tags": [
+        "p5.js",
+        "Web Audio API"
+      ],
       "role": "Diseño y desarrollo",
       "thumb": "assets/projects/pruebas-de-audio/thumb.png",
       "app": "https://bigkokoz.github.io/Pruebas-de-audio/",
-      "links": [{ "label": "Abrir", "url": "https://bigkokoz.github.io/Pruebas-de-audio/" }]
+      "links": [
+        {
+          "label": "Abrir",
+          "url": "https://bigkokoz.github.io/Pruebas-de-audio/"
+        }
+      ]
     },
     {
       "id": "interfaz-impresora",
@@ -81,7 +109,10 @@
       "cardExcerpt": "Diagrama de interacción de la Bambu Lab X1C: entradas (operadora, filamento, alimentación) y salidas (extrusor, movimiento, calefacción, pieza).",
       "description": "Diagrama de interacción integral: entradas del sistema (operadora, filamento, alimentación) y salidas y flujos (extrusor, control de movimiento, calefacción, pieza final) de la impresora Bambu Lab X1C.",
       "year": 2026,
-      "tags": ["Interfaces", "Diagrama"],
+      "tags": [
+        "Interfaces",
+        "Diagrama"
+      ],
       "role": "Diseño de interacción",
       "thumb": "assets/projects/interfaz-impresora/thumb.png",
       "links": []
