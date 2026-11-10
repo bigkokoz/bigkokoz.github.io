@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GESTO · José</title>
+<meta name="description" content="Reconocimiento de mano, cara y cuerpo en vivo con la cámara, en el navegador con MediaPipe. Experimento para entender qué puede y qué no la visión por computador.">
+<meta property="og:title" content="GESTO">
+<meta property="og:description" content="Reconocimiento de mano, cara y cuerpo en vivo con la cámara, en el navegador.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/site.css">
+<style>
+  .hero-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:40px;align-items:center}
+  @media (max-width:900px){.hero-grid{grid-template-columns:minmax(0,1fr)}}
+  .hero-art{background:radial-gradient(120% 90% at 60% 30%,#1b1e25 0%,#0c0d10 75%);border:1px solid var(--line);border-radius:var(--radius);padding:8px}
+  .hero-art svg{width:100%;height:auto;display:block}
+  .mod-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px}
+  .mod-card .k{font:600 .72rem var(--mono);color:var(--accent);letter-spacing:.1em;text-transform:uppercase}
+  .mod-card h3{margin:8px 0 6px}
+  .mod-card p{color:var(--muted);font-size:.92rem}
+  .yn{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+  @media (max-width:760px){.yn{grid-template-columns:minmax(0,1fr)}}
+  .yn ul{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:10px}
+  .yn li{display:grid;grid-template-columns:22px 1fr;gap:10px;color:var(--muted);font-size:.93rem;line-height:1.5}
+  .yn .ok li::before{content:"✓";color:var(--ok);font-weight:700}
+  .yn .no li::before{content:"✕";color:#ff6b6b;font-weight:700}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="../index.html"><span class="brand-dot"></span>José · Proyectos</a>
+    <nav class="nav">
+      <a href="index.html" aria-current="page">El proyecto</a>
+      <a href="app.html">App</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <p class="eyebrow">Taller de Interfaces · UAI · 2026</p>
+        <h1 style="margin-top:12px">GESTO</h1>
+        <p class="lead">Un experimento para ver, en la práctica, qué reconoce hoy la cámara: <b style="color:var(--text)">mano</b>, <b style="color:var(--text)">cara</b> y <b style="color:var(--text)">cuerpo</b> en vivo, con MediaPipe corriendo entero en el navegador. El video nunca sale de tu computador.</p>
+        <div class="btn-row" style="margin-top:26px">
+          <a class="btn primary" href="app.html">Abrir la app</a>
+          <a class="btn" href="https://ai.google.dev/edge/mediapipe" target="_blank" rel="noopener">Qué es MediaPipe</a>
+        </div>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <svg viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg" fill="none">
+          <g stroke="#ff7a1a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <!-- cuerpo -->
+            <circle cx="90" cy="70" r="16" fill="rgba(255,122,26,.12)"/>
+            <path d="M90 86 V170 M90 110 L55 150 M90 110 L125 150 M90 170 L66 240 M90 170 L114 240"/>
+            <!-- mano -->
+            <g transform="translate(210 40)">
+              <path d="M30 120 V70 M30 70 L18 40 M30 70 L30 30 M30 70 L44 32 M30 70 L58 44 M30 120 L10 95 M30 120 L52 100"/>
+            </g>
+            <!-- cara (malla simplificada) -->
+            <g transform="translate(250 180)">
+              <ellipse cx="60" cy="55" rx="52" ry="62" fill="rgba(255,177,92,.08)"/>
+              <circle cx="40" cy="45" r="5"/><circle cx="80" cy="45" r="5"/>
+              <path d="M60 52 V72 M42 92 Q60 104 78 92"/>
+              <path d="M22 50 L98 50 M60 10 L60 110 M30 25 L90 90 M90 25 L30 90" stroke="rgba(236,238,242,.18)" stroke-width="1"/>
+            </g>
+          </g>
+          <g fill="#ff7a1a">
+            <circle cx="55" cy="150" r="3.5"/><circle cx="125" cy="150" r="3.5"/><circle cx="66" cy="240" r="3.5"/><circle cx="114" cy="240" r="3.5"/>
+            <circle cx="240" cy="70" r="3.5"/><circle cx="240" cy="110" r="3.5"/><circle cx="268" cy="84" r="3.5"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+    <div class="wrap">
+      <dl class="hero-meta">
+        <div><dt>Tecnología</dt><dd>MediaPipe Tasks</dd></div>
+        <div><dt>Corre en</dt><dd>El navegador</dd></div>
+        <div><dt>Privacidad</dt><dd>100% en tu equipo</dd></div>
+        <div><dt>Año</dt><dd>2026</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- CÓMO FUNCIONA -->
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Cómo funciona</p>
+        <h2>Tres módulos, un mismo motor</h2>
+        <p>La cámara entrega imágenes; MediaPipe ubica puntos clave sobre ellas y el navegador dibuja y mide en tiempo real. Corre un módulo a la vez para ir fluido.</p>
+      </div>
+      <div class="grid-3">
+        <article class="mod-card"><span class="k">✋ Mano</span><h3>21 puntos por mano</h3><p>Sigue hasta 2 manos, cuenta los dedos levantados y detecta el gesto de pellizco.</p></article>
+        <article class="mod-card"><span class="k">😀 Cara</span><h3>478 puntos + expresiones</h3><p>Malla facial completa y medidas de sonrisa, boca, ojos y cejas. Incluye un filtro de lentes.</p></article>
+        <article class="mod-card"><span class="k">🧍 Cuerpo</span><h3>Esqueleto de 33 puntos</h3><p>Dibuja la pose y calcula ángulos de codos y rodillas en vivo — base para analizar movimiento.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUÉ PUEDE Y QUÉ NO -->
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Lo honesto</p>
+        <h2>Qué puede y qué no</h2>
+        <p>La gracia del experimento es entender los límites reales de la visión por computador con una sola cámara.</p>
+      </div>
+      <div class="yn">
+        <div class="panel"><b>Funciona bien</b><ul class="ok">
+          <li>Seguir manos, cara y cuerpo de una persona, de cerca y con buena luz.</li>
+          <li>Gestos y expresiones simples, en tiempo real y sin internet tras la primera carga.</li>
+          <li>Medir ángulos de articulaciones para dar feedback de postura.</li>
+        </ul></div>
+        <div class="panel"><b>Le cuesta</b><ul class="no">
+          <li>Reconocer <i>quién</i> es la persona: MediaPipe da puntos, no identidad.</li>
+          <li>Poses extremas o invertidas, oclusión y movimiento muy rápido.</li>
+          <li>El "3D" es estimado desde una cámara: sirve para guiar, no para medir con precisión.</li>
+        </ul></div>
+      </div>
+      <div class="callout" style="margin-top:22px">Todo el procesamiento ocurre en tu navegador. La cámara se activa solo cuando la pides y el video no se graba ni se envía a ningún servidor.</div>
+    </div>
+  </section>
+
+  <!-- FICHA -->
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head"><p class="eyebrow">Ficha técnica</p><h2>Bajo el capó</h2></div>
+      <div class="table-wrap">
+        <table class="spec">
+          <tr><td>Reconocimiento</td><td>MediaPipe Tasks Vision (Hand, Face y Pose Landmarker)</td></tr>
+          <tr><td>Dibujo</td><td>Canvas 2D sobre el video, en espejo tipo selfie</td></tr>
+          <tr><td>Modelos</td><td>Se descargan del CDN (~4–8 MB c/u) y quedan en caché</td></tr>
+          <tr><td>Requisitos</td><td>Chrome o Edge, cámara y permiso; servir por <code>http://localhost</code> o <code>https://</code></td></tr>
+          <tr><td>Privacidad</td><td>Sin servidor: el video se procesa y queda en el equipo</td></tr>
+        </table>
+      </div>
+      <div class="btn-row" style="margin-top:26px"><a class="btn primary" href="app.html">Abrir la app</a></div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-foot"><div class="wrap"><span>José · GESTO</span><span>Hecho con HTML, CSS y JavaScript · MediaPipe</span></div></footer>
+</body>
+</html>

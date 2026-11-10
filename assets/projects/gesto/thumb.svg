@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 250" width="400" height="250">
+  <defs>
+    <radialGradient id="g" cx="60%" cy="30%" r="90%">
+      <stop offset="0%" stop-color="#1b1e25"/>
+      <stop offset="75%" stop-color="#0b0c0f"/>
+    </radialGradient>
+  </defs>
+  <rect width="400" height="250" fill="url(#g)"/>
+  <g stroke="#ff7a1a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- cuerpo -->
+    <circle cx="78" cy="70" r="14" fill="rgba(255,122,26,.14)"/>
+    <path d="M78 84 V150 M78 104 L50 136 M78 104 L106 136 M78 150 L58 205 M78 150 L98 205"/>
+    <!-- mano -->
+    <g transform="translate(186 44)">
+      <path d="M26 96 V58 M26 58 L15 34 M26 58 L26 26 M26 58 L38 28 M26 58 L50 38 M26 96 L8 76 M26 96 L46 80"/>
+    </g>
+    <!-- cara -->
+    <g transform="translate(272 128)">
+      <ellipse cx="46" cy="46" rx="42" ry="52" fill="rgba(255,177,92,.09)"/>
+      <circle cx="30" cy="38" r="4"/><circle cx="62" cy="38" r="4"/>
+      <path d="M46 44 V60 M32 76 Q46 86 60 76"/>
+      <path d="M12 42 L80 42 M46 6 L46 92 M22 18 L70 78 M70 18 L22 78" stroke="rgba(236,238,242,.16)" stroke-width="1"/>
+    </g>
+  </g>
+  <g fill="#ff7a1a">
+    <circle cx="50" cy="136" r="3"/><circle cx="106" cy="136" r="3"/><circle cx="58" cy="205" r="3"/><circle cx="98" cy="205" r="3"/>
+    <circle cx="212" cy="58" r="3"/><circle cx="212" cy="102" r="3"/><circle cx="236" cy="72" r="3"/>
+  </g>
+  <text x="26" y="36" fill="#ff7a1a" font-family="'JetBrains Mono', monospace" font-size="11" letter-spacing="2" font-weight="600">GESTO</text>
+</svg>
