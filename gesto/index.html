@@ -34,6 +34,7 @@
     <nav class="nav">
       <a href="index.html" aria-current="page">El proyecto</a>
       <a href="app.html">App</a>
+      <a href="ar/">AR</a>
     </nav>
   </div>
 </header>
@@ -48,6 +49,7 @@
         <p class="lead">Un experimento para ver, en la práctica, qué reconoce hoy la cámara: <b style="color:var(--text)">mano</b>, <b style="color:var(--text)">cara</b> y <b style="color:var(--text)">cuerpo</b> en vivo, con MediaPipe corriendo entero en el navegador. El video nunca sale de tu computador.</p>
         <div class="btn-row" style="margin-top:26px">
           <a class="btn primary" href="app.html">Abrir la app</a>
+          <a class="btn" href="ar/">Abrir la AR</a>
           <a class="btn" href="https://ai.google.dev/edge/mediapipe" target="_blank" rel="noopener">Qué es MediaPipe</a>
         </div>
       </div>
@@ -123,6 +125,24 @@
         </ul></div>
       </div>
       <div class="callout" style="margin-top:22px">Todo el procesamiento ocurre en tu navegador. La cámara se activa solo cuando la pides y el video no se graba ni se envía a ningún servidor.</div>
+    </div>
+  </section>
+
+  <!-- REALIDAD AUMENTADA -->
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Extra · Realidad aumentada</p>
+        <h2>Del gesto al objeto: AR por marcador</h2>
+        <p>Si GESTO lee el cuerpo sobre el video, esta app da el paso siguiente: <b style="color:var(--text)">anclar un objeto 3D al mundo real</b>. Apuntas la cámara del celular a un marcador y un modelo animado aparece encima; lo rotas arrastrando y lo escalas pellizcando. Hecho con AR.js y A-Frame, corriendo entero en el navegador.</p>
+      </div>
+      <div class="grid-3">
+        <article class="mod-card"><span class="k">🎯 Marcador</span><h3>Imagen de referencia</h3><p>La cámara detecta un patrón impreso y usa su posición para colocar el modelo con la orientación correcta.</p></article>
+        <article class="mod-card"><span class="k">🧊 Modelo 3D</span><h3>glTF animado</h3><p>Un modelo con animación en bucle se dibuja sobre el marcador y te sigue mientras mueves el teléfono.</p></article>
+        <article class="mod-card"><span class="k">📱 En el celular</span><h3>Safari o Chrome</h3><p>Pensado para el móvil. Necesita HTTPS y permiso de cámara; se abre desde la URL pública del sitio.</p></article>
+      </div>
+      <div class="callout" style="margin-top:22px">Para que aparezca el modelo hay que <b>apuntar la cámara al marcador</b> correspondiente (el mismo que se usó al crear la escena). Sin marcador a la vista, la pantalla muestra solo la cámara.</div>
+      <div class="btn-row" style="margin-top:22px"><a class="btn primary" href="ar/">Abrir la AR</a></div>
     </div>
   </section>
 
