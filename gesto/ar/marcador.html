@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Marcador · GESTO AR</title>
+    <style>
+      :root { --accent: #ff7a1a; }
+      html, body { margin: 0; background: #fff; color: #141414;
+        font-family: "Inter", system-ui, -apple-system, sans-serif; }
+      .bar { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+        padding: 12px 16px; border-bottom: 1px solid #eee; }
+      .bar a, .bar button { text-decoration: none; font: inherit; font-size: 14px; font-weight: 600;
+        color: #141414; background: #f3f3f3; border: 1px solid #ddd; border-radius: 10px;
+        padding: 8px 14px; cursor: pointer; }
+      .bar .primary { background: var(--accent); border-color: var(--accent); color: #140a02; }
+      .wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 24px 16px 40px; }
+      .wrap img { width: min(78vmin, 560px); height: auto; display: block; }
+      .tip { max-width: 520px; text-align: center; color: #555; font-size: 14px; line-height: 1.6; }
+      @media print {
+        .bar, .tip { display: none; }
+        .wrap { padding: 0; }
+        .wrap img { width: 15cm; height: 15cm; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bar">
+      <a href="index.html">← Volver a la AR</a>
+      <button class="primary" onclick="window.print()">🖨 Imprimir</button>
+    </div>
+    <div class="wrap">
+      <img src="assets/marker.png" alt="Marcador del robot para AR" />
+      <p class="tip">Imprime este marcador o muéstralo en otra pantalla, y apunta la cámara del celular
+        desde la app de AR. Mantén el <b>marco negro completo</b> dentro del encuadre y con buena luz.</p>
+    </div>
+  </body>
+</html>

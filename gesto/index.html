@@ -25,6 +25,7 @@
   .yn li{display:grid;grid-template-columns:22px 1fr;gap:10px;color:var(--muted);font-size:.93rem;line-height:1.5}
   .yn .ok li::before{content:"✓";color:var(--ok);font-weight:700}
   .yn .no li::before{content:"✕";color:#ff6b6b;font-weight:700}
+  @media (max-width:620px){.marker-row{grid-template-columns:minmax(0,1fr)!important;justify-items:center;text-align:center}}
 </style>
 </head>
 <body>
@@ -141,8 +142,23 @@
         <article class="mod-card"><span class="k">🧊 Modelo 3D</span><h3>glTF animado</h3><p>Un modelo con animación en bucle se dibuja sobre el marcador y te sigue mientras mueves el teléfono.</p></article>
         <article class="mod-card"><span class="k">📱 En el celular</span><h3>Safari o Chrome</h3><p>Pensado para el móvil. Necesita HTTPS y permiso de cámara; se abre desde la URL pública del sitio.</p></article>
       </div>
-      <div class="callout" style="margin-top:22px">Para que aparezca el modelo hay que <b>apuntar la cámara al marcador</b> correspondiente (el mismo que se usó al crear la escena). Sin marcador a la vista, la pantalla muestra solo la cámara.</div>
-      <div class="btn-row" style="margin-top:22px"><a class="btn primary" href="ar/">Abrir la AR</a></div>
+      <div class="callout" style="margin-top:22px">Para que aparezca el modelo hay que <b>apuntar la cámara al marcador</b> de abajo (el robot dentro del marco negro). Sin el marcador a la vista, la pantalla muestra solo la cámara.</div>
+
+      <div style="display:grid;grid-template-columns:200px minmax(0,1fr);gap:24px;align-items:center;margin-top:24px" class="marker-row">
+        <a href="ar/assets/marker.png" download="marcador-robot.png" style="display:block;background:#fff;border-radius:14px;padding:10px;border:1px solid var(--line)">
+          <img src="ar/assets/marker.png" alt="Marcador del robot para AR" style="width:100%;height:auto;display:block;border-radius:6px" />
+        </a>
+        <div>
+          <h3 style="margin:0 0 6px">El marcador</h3>
+          <p style="color:var(--muted);margin:0 0 14px">Imprímelo o muéstralo en otra pantalla y apunta el celular. El marco negro completo debe quedar dentro del encuadre, con buena luz.</p>
+          <div class="btn-row">
+            <a class="btn primary" href="ar/assets/marker.png" download="marcador-robot.png">⬇ Descargar marcador</a>
+            <a class="btn" href="ar/marcador.html" target="_blank" rel="noopener">Mostrar / imprimir</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-top:26px"><a class="btn primary" href="ar/">Abrir la AR</a></div>
     </div>
   </section>
 

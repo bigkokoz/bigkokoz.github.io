@@ -37,8 +37,11 @@
         transition: opacity .5s ease; }
       #hint h2 { margin: 0 0 6px; font-size: 17px; }
       #hint p { margin: 0; font-size: 14px; line-height: 1.5; color: #b5b2ac; }
-      #hint button { margin-top: 12px; background: var(--accent); color: #140a02; border: none;
-        padding: 10px 22px; font-size: 15px; font-weight: 700; border-radius: 10px; cursor: pointer; }
+      #hint .hbtn { display: inline-block; text-decoration: none; background: rgba(255,255,255,0.08);
+        color: #f3efe9; border: 1px solid rgba(255,255,255,0.18); padding: 10px 16px; font-size: 14px;
+        font-weight: 600; border-radius: 10px; cursor: pointer; font-family: inherit; }
+      #hint .hbtn.primary { background: var(--accent); color: #140a02; border-color: var(--accent); font-weight: 700; }
+      #hint .hbtn:hover { border-color: var(--accent); }
 
       /* Aviso si no hay cámara / contexto inseguro */
       #warn { position: fixed; inset: 0; z-index: 10000; display: none;
@@ -60,10 +63,17 @@
 
     <!-- Instrucciones -->
     <div id="hint">
-      <h2>Apunta la cámara al marcador</h2>
-      <p>Permite el acceso a la cámara y enfoca el <b>marcador impreso</b> (o mostrado en otra pantalla).
-         El modelo 3D aparecerá sobre él. Puedes <b>arrastrar</b> para rotarlo y <b>pellizcar</b> para escalarlo.</p>
-      <button id="hintOk">Entendido</button>
+      <h2>Apunta la cámara a este marcador</h2>
+      <img src="assets/marker.png" alt="Marcador del robot" width="120" height="120"
+           style="display:block;margin:4px auto 10px;border-radius:10px;background:#fff" />
+      <p>Permite el acceso a la cámara y enfoca el <b>marcador</b> (el robot dentro del marco negro),
+         impreso o mostrado en otra pantalla. El modelo 3D aparecerá sobre él.
+         <b>Arrastra</b> para rotarlo y <b>pellizca</b> para escalarlo.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:12px">
+        <a class="hbtn" href="assets/marker.png" download="marcador-robot.png">⬇ Descargar marcador</a>
+        <a class="hbtn" href="marcador.html" target="_blank" rel="noopener">🖥 Mostrar grande</a>
+        <button id="hintOk" class="hbtn primary">Entendido</button>
+      </div>
     </div>
 
     <!-- Aviso de cámara no disponible -->
