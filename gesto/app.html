@@ -188,68 +188,86 @@
   const noteName = m => NOTE_NAMES[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1);
   function scaleNotes() { const st = SCALES[scaleName], out = []; for (let o = 0; o < OCTAVES; o++) for (const s of st) out.push(ROOT_MIDI + o * 12 + s); out.push(ROOT_MIDI + OCTAVES * 12); return out; }
 
-  // --- motor de audio ---
-  let engine = null, instrName = 'Synth';
-  const INSTR = ['Synth', 'Bajo', 'Pluck', 'Campana', 'Pad'];
-  const fx = { reverb: false, delay: false, filtro: false };
-  function makeInstrument(n) {
-    let i;
-    if (n === 'Synth') i = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'sawtooth' }, envelope: { attack: 0.02, decay: 0.2, sustain: 0.6, release: 0.3 } });
-    else if (n === 'Bajo') i = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'square' }, envelope: { attack: 0.02, decay: 0.2, sustain: 0.7, release: 0.2 } });
-    else if (n === 'Pluck') i = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'triangle' }, envelope: { attack: 0.004, decay: 0.3, sustain: 0.0, release: 0.3 } });
-    else if (n === 'Campana') i = new Tone.PolySynth(Tone.FMSynth, { envelope: { attack: 0.01, decay: 0.4, sustain: 0.1, release: 1.2 } });
-    else i = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'sine' }, envelope: { attack: 0.5, decay: 0.3, sustain: 0.8, release: 1.6 } });
-    i.volume.value = -9; return i;
-  }
+  // ===== Motor generativo: beat + bajo + acordes + melodía en loop =====
+  const CH = { min: [0, 3, 7], maj: [0, 4, 7], min7: [0, 3, 7, 10], maj7: [0, 4, 7, 11], dom7: [0, 4, 7, 10] };
+  const PRESETS = {
+    'Chill':  { bpm: 82,  k: '1000000000001000', s: '0000100000001000', h: '0010101000101010', prog: [[57, 'min7'], [53, 'maj7'], [60, 'maj7'], [55, 'dom7']] },
+    'House':  { bpm: 122, k: '1000100010001000', s: '0000100000001000', h: '1010101010101010', prog: [[57, 'min'], [53, 'maj'], [60, 'maj'], [55, 'maj']] },
+    'HipHop': { bpm: 88,  k: '1000001000100000', s: '0000100000001000', h: '1010101010101010', prog: [[48, 'min7'], [53, 'min7'], [55, 'dom7'], [48, 'min7']] },
+    'Techno': { bpm: 128, k: '1000100010001000', s: '0000000000000000', h: '0010001000100010', prog: [[45, 'min'], [45, 'min'], [52, 'min'], [50, 'maj']] },
+  };
+  const BEATS = Object.keys(PRESETS);
+  let preset = 'Chill';
+  const layers = { drums: true, bass: true, chords: true, lead: true };
+  const LAYER_ES = { drums: 'Batería', bass: 'Bajo', chords: 'Acordes', lead: 'Melodía' };
+  let eng = null, seq = null, barIdx = -1, transportOn = false;
+  const mod = { cut: 2000, rev: 0, del: 0, lead: -16 };
+
+  function chordMidis(c) { return CH[c[1]].map(s => c[0] + s); }
+  function chordNotes(c) { return chordMidis(c).map(noteName); }
+  function curChord() { return PRESETS[preset].prog[barIdx < 0 ? 0 : barIdx]; }
+  function chordLabel(c) { return noteName(c[0] + 12).slice(0, -1) + (c[1].indexOf('min') === 0 ? 'm' : '') + (c[1].indexOf('7') >= 0 ? '7' : ''); }
+
   function buildEngine() {
-    if (engine || typeof Tone === 'undefined') return;
-    const filter = new Tone.Filter({ type: 'lowpass', frequency: 1800, Q: 1 });
-    const delay = new Tone.FeedbackDelay({ delayTime: '8n', feedback: 0.35, wet: 0 });
-    const reverb = new Tone.Reverb({ decay: 2.6, wet: 0 });
-    const out = new Tone.Gain(0.9).toDestination();
-    filter.connect(delay); delay.connect(reverb); reverb.connect(out);
-    const inst = makeInstrument(instrName); inst.connect(filter);
-    engine = { inst, filter, delay, reverb, out }; applyFx();
+    if (eng || typeof Tone === 'undefined') return;
+    const filter = new Tone.Filter({ type: 'lowpass', frequency: 2000, Q: 1 });
+    const delay = new Tone.FeedbackDelay({ delayTime: '8n.', feedback: 0.3, wet: 0 });
+    const reverb = new Tone.Reverb({ decay: 3, wet: 0 });
+    const master = new Tone.Gain(0.85).toDestination();
+    filter.connect(delay); delay.connect(reverb); reverb.connect(master);
+    const kick = new Tone.MembraneSynth({ pitchDecay: 0.03, octaves: 6, envelope: { attack: 0.001, decay: 0.3, sustain: 0 } });
+    const snFil = new Tone.Filter({ type: 'bandpass', frequency: 1800, Q: 1 });
+    const snare = new Tone.NoiseSynth({ noise: { type: 'white' }, envelope: { attack: 0.001, decay: 0.18, sustain: 0 } });
+    const hatFil = new Tone.Filter({ type: 'highpass', frequency: 7000 });
+    const hat = new Tone.NoiseSynth({ noise: { type: 'white' }, envelope: { attack: 0.001, decay: 0.04, sustain: 0 } });
+    const bass = new Tone.MonoSynth({ oscillator: { type: 'sawtooth' }, envelope: { attack: 0.02, decay: 0.2, sustain: 0.5, release: 0.2 }, filterEnvelope: { baseFrequency: 120, octaves: 2.5 } });
+    const chords = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'sawtooth' }, envelope: { attack: 0.5, decay: 0.3, sustain: 0.7, release: 1.4 } });
+    const lead = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.01, decay: 0.2, sustain: 0.2, release: 0.2 } });
+    kick.volume.value = 2; snare.volume.value = -7; hat.volume.value = -15; bass.volume.value = -7; chords.volume.value = -15; lead.volume.value = mod.lead;
+    snare.connect(snFil); snFil.connect(filter); hat.connect(hatFil); hatFil.connect(filter);
+    [kick, bass, chords, lead].forEach(v => v.connect(filter));
+    eng = { filter, delay, reverb, master, kick, snare, hat, bass, chords, lead };
+    makeSeq(); Tone.Transport.bpm.value = PRESETS[preset].bpm; Tone.Transport.start(); transportOn = true;
   }
-  function setInstrument(n) {
-    instrName = n; if (!engine) { updateStudioUI(); return; }
-    const old = engine.inst, ni = makeInstrument(n); ni.connect(engine.filter); engine.inst = ni;
-    try { old.releaseAll && old.releaseAll(); } catch (_) {} try { old.dispose(); } catch (_) {}
-    for (const s of slots) { s.note = null; s.nm = null; } updateStudioUI();
+  function makeSeq() {
+    if (seq) { try { seq.dispose(); } catch (_) {} }
+    barIdx = -1;
+    seq = new Tone.Sequence((time, s) => {
+      const P = PRESETS[preset];
+      if (s === 0) { barIdx = (barIdx + 1) % P.prog.length; if (layers.chords) eng.chords.triggerAttackRelease(chordNotes(P.prog[barIdx]), '1m', time); }
+      const chm = chordMidis(P.prog[barIdx < 0 ? 0 : barIdx]);
+      if (layers.drums) {
+        if (P.k[s] === '1') eng.kick.triggerAttackRelease('C1', '8n', time);
+        if (P.s[s] === '1') eng.snare.triggerAttackRelease('16n', time);
+        if (P.h[s] === '1') eng.hat.triggerAttackRelease('32n', time);
+      }
+      if (layers.bass && s % 2 === 0) eng.bass.triggerAttackRelease(noteName(chm[0] - 12), '8n', time);
+      if (layers.lead && s % 2 === 0) eng.lead.triggerAttackRelease(noteName(chm[Math.floor(s / 2) % chm.length] + 12), '16n', time);
+    }, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], '16n');
+    seq.start(0);
   }
-  function applyFx() {
-    if (!engine) return;
-    engine.delay.wet.rampTo(fx.delay ? 0.3 : 0, 0.1);
-    engine.reverb.wet.rampTo(fx.reverb ? 0.45 : 0, 0.1);
-    engine.filter.frequency.rampTo(fx.filtro ? 650 : 1800, 0.1);
-  }
-  function toggleFx(k) { fx[k] = !fx[k]; applyFx(); updateStudioUI(); }
+  function setPreset(n) { preset = n; if (eng) { Tone.Transport.bpm.rampTo(PRESETS[n].bpm, 0.3); barIdx = -1; } updateStudioUI(); }
+  function toggleLayer(k) { layers[k] = !layers[k]; updateStudioUI(); }
+  function togglePlay() { if (!eng) { buildEngine(); updateStudioUI(); return; } if (transportOn) { Tone.Transport.pause(); transportOn = false; } else { Tone.Transport.start(); transportOn = true; } updateStudioUI(); }
+  function stab(cy) { if (eng && layers.lead !== undefined) { const n = scaleNotes(); eng.lead.triggerAttackRelease(noteName(n[Math.round(clamp((0.92 - cy) / 0.84, 0, 1) * (n.length - 1))] + 12), '8n'); } }
 
-  // --- looper (basado en el reloj del navegador) ---
-  const looper = { rec: false, playing: false, start: 0, len: 4000, lastPos: 0, events: [] };
-  function loopPos() { return looper.playing ? (performance.now() - looper.start) % looper.len : 0; }
-  function loopStart() { looper.playing = true; looper.start = performance.now(); looper.lastPos = 0; for (const e of looper.events) e.fired = false; updateStudioUI(); }
-  function loopStop() { looper.playing = false; looper.rec = false; updateStudioUI(); }
-  function loopClear() { looper.events = []; updateStudioUI(); }
-  function loopToggleRec() { looper.rec = !looper.rec; if (looper.rec && !looper.playing) loopStart(); updateStudioUI(); }
-  function recordEvent(nm, t, dur) { if (looper.rec) looper.events.push({ nm, t, dur: Math.max(0.08, dur), fired: true }); }
-  function loopTick() {
-    if (!looper.playing || !engine) return;
-    const pos = loopPos();
-    if (pos < looper.lastPos) for (const e of looper.events) e.fired = false;
-    for (const e of looper.events) if (!e.fired && pos >= e.t) { e.fired = true; try { engine.inst.triggerAttackRelease(e.nm, e.dur); } catch (_) {} }
-    looper.lastPos = pos;
+  function applyMod(topHandY, blend) {
+    const b = {}; if (blend) for (const c of blend) b[c.categoryName] = c.score;
+    const jaw = b.jawOpen || 0, brow = b.browInnerUp || 0, smile = Math.max(b.mouthSmileLeft || 0, b.mouthSmileRight || 0);
+    const targetCut = topHandY != null ? 250 * Math.pow(26, clamp((0.92 - topHandY) / 0.84, 0, 1)) : mod.cut;
+    mod.cut += (targetCut - mod.cut) * 0.15;
+    mod.lead += ((-26 + jaw * 24) - mod.lead) * 0.15;
+    mod.rev += ((brow * 0.55) - mod.rev) * 0.1;
+    mod.del += ((smile * 0.4) - mod.del) * 0.1;
+    if (eng) { eng.filter.frequency.value = mod.cut; eng.lead.volume.value = mod.lead; eng.reverb.wet.value = mod.rev; eng.delay.wet.value = mod.del; }
+    return { jaw, brow, smile };
   }
 
-  // --- notas en vivo (por "slot" de mano) ---
+  // estado de manos para la UI (pellizco / cursor)
   const slots = [{}, {}];
-  function pitchFromY(cy) { const n = scaleNotes(); return n[Math.round(clamp((0.92 - cy) / 0.84, 0, 1) * (n.length - 1))]; }
-  function noteOn(s, midi) { buildEngine(); const nm = noteName(midi); try { engine.inst.triggerAttack(nm); } catch (_) {} s.note = midi; s.nm = nm; s.t0 = performance.now(); s.rt = loopPos(); }
-  function noteOff(s) { if (s.note == null) return; try { engine.inst.triggerRelease(s.nm); } catch (_) {} recordEvent(s.nm, s.rt, (performance.now() - s.t0) / 1000); s.note = null; s.nm = null; }
-  function noteRetune(s, midi) { if (s.note === midi) return; noteOff(s); noteOn(s, midi); }
 
   const META = {
-    instr: ['Instrumento', 'Pellizca 🤏 en el aire para tocar (altura de la mano = nota). Pellizca los pads para cambiar instrumento, efectos y loops. Dedos arriba (1–5) = cambia de instrumento.'],
+    instr: ['Estudio', 'Suena solo como una canción: sube/baja la mano = filtro (abre/cierra), 👄 boca = melodía, 😮 cejas = reverb, 🙂 sonrisa = delay. Pellizca los pads para elegir beat y prender/apagar capas. Dedos 1–4 = cambia de beat.'],
     todo: ['Todo junto', 'Muestra manos, cara y cuerpo a la vez — lo que esté en cuadro.'],
     hand: ['Manos', 'Levanta una o dos manos. Prueba gestos: ✋ ✊ ☝️ ✌️ 👍.'],
     face: ['Cara', 'Mira a la cámara: prueba sonreír, abrir la boca o cerrar un ojo.'],
@@ -385,7 +403,7 @@
     return models[m];
   }
   async function ensureModelsFor(m) {
-    if (m === 'instr') return ensureModel('hand');
+    if (m === 'instr') { await ensureModel('hand'); await ensureModel('face'); return; }
     if (m === 'todo') { await ensureModel('hand'); await ensureModel('face'); await ensureModel('body'); return; }
     return ensureModel(m);
   }
@@ -516,22 +534,22 @@
   function buildStudioUI() {
     const ib = $('instrBar'), fb = $('fxBar'), lb = $('loopBar');
     ib.innerHTML = ''; fb.innerHTML = ''; lb.innerHTML = ''; studioButtons = [];
-    INSTR.forEach(n => ib.appendChild(pad(n, 'instr', n)));
-    [['Reverb', 'reverb'], ['Delay', 'delay'], ['Filtro', 'filtro']].forEach(([l, k]) => fb.appendChild(pad(l, 'fx', k)));
-    [['● Rec', 'rec'], ['▶ Loop', 'play'], ['✕ Clear', 'clear']].forEach(([l, v]) => lb.appendChild(pad(l, 'loop', v)));
+    BEATS.forEach(n => ib.appendChild(pad(n, 'beat', n)));
+    Object.keys(layers).forEach(k => fb.appendChild(pad(LAYER_ES[k], 'layer', k)));
+    lb.appendChild(pad('▶ / ⏸', 'play', 'toggle'));
     updateStudioUI();
   }
   function updateStudioUI() {
     for (const b of studioButtons) {
       const a = b.dataset.action, v = b.dataset.value;
-      const on = a === 'instr' ? v === instrName : a === 'fx' ? fx[v] : (v === 'rec' && looper.rec) || (v === 'play' && looper.playing);
+      const on = a === 'beat' ? v === preset : a === 'layer' ? layers[v] : transportOn;
       b.classList.toggle('on', on);
     }
   }
   function activate(action, value) {
-    if (action === 'instr') setInstrument(value);
-    else if (action === 'fx') toggleFx(value);
-    else if (action === 'loop') { if (value === 'rec') loopToggleRec(); else if (value === 'play') looper.playing ? loopStop() : loopStart(); else loopClear(); }
+    if (action === 'beat') setPreset(value);
+    else if (action === 'layer') toggleLayer(value);
+    else if (action === 'play') togglePlay();
   }
   function hitTestButton(cx, cy) {
     const vp = canvas.getBoundingClientRect();
@@ -540,36 +558,34 @@
     return null;
   }
   function pinchState(s, lm) { const d = dist(lm[4], lm[8]) / (dist(lm[0], lm[9]) || 1); s.pinch = s.pinch ? d < 0.45 : d < 0.3; return s.pinch; }
-  function fingerSelect(s, f) { if (f >= 1 && f <= 5) { if (s.fc === f) { if (++s.fh === 12) setInstrument(INSTR[f - 1]); } else { s.fc = f; s.fh = 0; } } else s.fh = 0; }
-  function studioStop() { if (engine) { try { engine.inst.releaseAll(); } catch (_) {} } for (const s of slots) { s.note = null; s.nm = null; s.prev = false; } looper.playing = false; looper.rec = false; }
+  function fingerSelect(s, f) { if (f >= 1 && f <= 4) { if (s.fc === f) { if (++s.fh === 12) setPreset(BEATS[f - 1]); } else { s.fc = f; s.fh = 0; } } else s.fh = 0; }
+  function studioStop() { if (eng) { try { Tone.Transport.pause(); } catch (_) {} transportOn = false; try { eng.chords.releaseAll(); } catch (_) {} } for (const s of slots) s.prev = false; }
 
+  let faceFrame = false, lastBlend = null, lastFaceLm = null;
   function runStudio(now) {
     buildEngine();
     const res = models.hand.recognizeForVideo(video, now);
     const hands = res.landmarks || [];
     const arr = hands.map((lm, i) => ({ lm, i, x: 1 - lm[9].x })).sort((a, b) => a.x - b.x);
-    drawScaleGuide();
+    faceFrame = !faceFrame;                               // cara en frames alternos (más fluido)
+    if (faceFrame && models.face) { const fr = models.face.detectForVideo(video, now); lastFaceLm = fr.faceLandmarks?.[0] || null; lastBlend = fr.faceBlendshapes?.[0]?.categories || null; }
+    if (lastFaceLm) drawFaceLm(lastFaceLm);
+    let topY = null;
     for (let k = 0; k < 2; k++) {
       const s = slots[k], h = arr[k];
-      if (!h) { if (s.prev && s.note != null) noteOff(s); s.prev = false; s.note = null; s.fingers = null; continue; }
+      if (!h) { s.prev = false; s.fingers = null; continue; }
       drawHandStudio(h.lm);
       const cx = 1 - h.lm[8].x, cy = h.lm[8].y;
+      if (topY == null || h.lm[9].y < topY) topY = h.lm[9].y;
       const pinch = pinchState(s, h.lm);
       const over = hitTestButton(cx, cy);
       drawCursor(h.lm, pinch, over);
-      if (pinch && !s.prev) {
-        if (over) { activate(over.dataset.action, over.dataset.value); s.ui = true; }
-        else { s.ui = false; noteOn(s, pitchFromY(cy)); }
-      } else if (pinch && s.note != null && !s.ui) {
-        noteRetune(s, pitchFromY(cy));
-      } else if (!pinch && s.prev) {
-        if (!s.ui) noteOff(s); s.ui = false; s.fh = 0;
-      }
-      if (!pinch) fingerSelect(s, countFingers(h.lm));
-      s.prev = pinch; s.fingers = countFingers(h.lm); s.ges = gesName(res, h.i);
+      if (pinch && !s.prev) { if (over) activate(over.dataset.action, over.dataset.value); else stab(cy); }
+      if (!pinch) fingerSelect(s, countFingers(h.lm)); else s.fh = 0;
+      s.prev = pinch; s.fingers = countFingers(h.lm);
     }
-    loopTick();
-    updateInstrPanel(arr.length);
+    const face = applyMod(topY, lastBlend);
+    updateInstrPanel(arr.length, face);
   }
   function drawHandStudio(lm) {
     drawUtils.drawConnectors(lm, HandLandmarker.HAND_CONNECTIONS, { color: 'rgba(236,238,242,.5)', lineWidth: 3 });
@@ -591,13 +607,13 @@
     ctx.strokeStyle = 'rgba(236,238,242,.06)'; ctx.lineWidth = 1;
     for (let i = 0; i < n.length; i++) { const y = (0.92 - (i / (n.length - 1)) * 0.84) * H; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W * 0.13, y); ctx.stroke(); }
   }
-  function updateInstrPanel(nHands) {
+  function updateInstrPanel(nHands, face) {
     if (!refs.iInst) return;
-    refs.iInst.textContent = instrName;
-    const playing = slots.filter(s => s.note != null).map(s => s.nm);
-    refs.iNote.textContent = playing.length ? playing.join(' + ') : '—';
-    refs.iLoop.textContent = looper.playing ? (looper.rec ? '● grabando' : '▶ ' + looper.events.length + ' notas') : '—';
-    refs.iFing.textContent = nHands ? slots.slice(0, nHands).map(s => (s.fingers ?? '—')).join(' / ') : '—';
+    refs.iInst.textContent = preset + (transportOn ? ' ▶' : ' ⏸');
+    refs.iNote.textContent = chordLabel(curChord());
+    refs.iLoop.textContent = Math.round(clamp((Math.log(mod.cut) - Math.log(250)) / (Math.log(6500) - Math.log(250)), 0, 1) * 100) + '%';
+    const f = face || {};
+    refs.iFing.textContent = '👄 ' + Math.round((f.jaw || 0) * 100) + '  😮 ' + Math.round((f.brow || 0) * 100) + '  🙂 ' + Math.round((f.smile || 0) * 100);
   }
 
   /* ---------- panel ---------- */
@@ -605,7 +621,7 @@
   function buildPanel(m) {
     panelTitle.textContent = META[m][0]; panelHint.textContent = META[m][1];
     if (m === 'instr') {
-      panelBody.innerHTML = `<div class="stats"><div class="stat"><div class="k">Instrumento</div><div class="v" id="iInst" style="font-size:1.1rem">—</div></div><div class="stat"><div class="k">Nota</div><div class="v" id="iNote" style="font-size:1.1rem">—</div></div><div class="stat"><div class="k">Loop</div><div class="v" id="iLoop" style="font-size:1rem">—</div></div><div class="stat"><div class="k">Dedos</div><div class="v" id="iFing">—</div></div></div>
+      panelBody.innerHTML = `<div class="stats"><div class="stat"><div class="k">Beat</div><div class="v" id="iInst" style="font-size:1.1rem">—</div></div><div class="stat"><div class="k">Acorde</div><div class="v" id="iNote" style="font-size:1.1rem">—</div></div><div class="stat"><div class="k">Filtro</div><div class="v" id="iLoop" style="font-size:1rem">—</div></div><div class="stat"><div class="k">Cara</div><div class="v" id="iFing" style="font-size:.9rem">—</div></div></div>
         <div style="display:flex;gap:10px;align-items:center;margin-top:12px"><label style="color:var(--muted);font-size:.86rem">Escala</label>
         <select id="iScale" style="flex:1;background:var(--surface-2);color:var(--text);border:1px solid var(--line-2);border-radius:8px;padding:7px 9px;font:inherit">${Object.keys(SCALES).map(s => `<option ${s === scaleName ? 'selected' : ''}>${s}</option>`).join('')}</select></div>`;
       refs.iInst = panelBody.querySelector('#iInst'); refs.iNote = panelBody.querySelector('#iNote'); refs.iLoop = panelBody.querySelector('#iLoop'); refs.iFing = panelBody.querySelector('#iFing');
