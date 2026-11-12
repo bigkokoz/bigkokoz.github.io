@@ -58,6 +58,16 @@
   .fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent-2));transition:width .07s linear}
   .barrow .p{font:500 .78rem var(--mono);color:var(--accent);text-align:right}
   .hint{color:var(--faint);font-size:.82rem;line-height:1.5}
+
+  /* ---- Estudio: superficie de control por pellizco ---- */
+  .studio{position:absolute;inset:0;pointer-events:none}
+  .studio .bar{position:absolute;display:flex;gap:8px;pointer-events:auto}
+  .studio .bar.top{top:10px;left:10px;right:10px;justify-content:center;flex-wrap:wrap}
+  .studio .bar.bottom{bottom:10px;left:10px;right:10px;justify-content:center;flex-wrap:wrap}
+  .studio .bar.side{top:66px;right:10px;flex-direction:column}
+  .studio .pad{background:rgba(16,18,23,.72);border:1px solid var(--line-2);color:var(--text);border-radius:12px;padding:9px 13px;font:600 .82rem var(--font);cursor:pointer;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);white-space:nowrap;transition:background .12s,border-color .12s}
+  .studio .pad:hover{border-color:rgba(255,255,255,.3)}
+  .studio .pad.on{background:var(--accent);border-color:var(--accent);color:#16110b}
 </style>
 </head>
 <body>
@@ -97,6 +107,13 @@
     <div class="viewport">
       <video id="cam" playsinline muted></video>
       <canvas id="overlay"></canvas>
+
+      <!-- Estudio: pads de control (pellizco o clic) -->
+      <div id="studio" class="studio" hidden>
+        <div class="bar top" id="instrBar"></div>
+        <div class="bar side" id="fxBar"></div>
+        <div class="bar bottom" id="loopBar"></div>
+      </div>
 
       <!-- estado: inactivo -->
       <div class="state" id="stIdle">
@@ -162,8 +179,7 @@
   let drawUtils = null, mode = 'instr', camStream = null, lastT = -1, rafId = null, showGlasses = false;
   const refs = {};
 
-  /* ---------- audio (Tone.js) para el modo Instrumento ---------- */
-  let audio = null;
+  /* ================= ESTUDIO DE MÚSICA (Tone.js) ================= */
   let scaleName = 'Pentatónica';
   const SCALES = { 'Pentatónica': [0, 2, 4, 7, 9], 'Mayor': [0, 2, 4, 5, 7, 9, 11], 'Menor': [0, 2, 3, 5, 7, 8, 10], 'Cromática': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] };
   const ROOT_MIDI = 48, OCTAVES = 3;
@@ -171,11 +187,69 @@
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const noteName = m => NOTE_NAMES[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1);
   function scaleNotes() { const st = SCALES[scaleName], out = []; for (let o = 0; o < OCTAVES; o++) for (const s of st) out.push(ROOT_MIDI + o * 12 + s); out.push(ROOT_MIDI + OCTAVES * 12); return out; }
-  function ensureAudioNodes() { if (audio || typeof Tone === 'undefined') return; const osc = new Tone.Oscillator(220, 'sawtooth').start(); const filter = new Tone.Filter({ type: 'lowpass', frequency: 1400, Q: 1 }); const gain = new Tone.Gain(0); osc.connect(filter); filter.connect(gain); gain.toDestination(); audio = { osc, filter, gain }; }
-  function setVol(v) { if (audio) audio.gain.gain.rampTo(v, 0.05); }
+
+  // --- motor de audio ---
+  let engine = null, instrName = 'Synth';
+  const INSTR = ['Synth', 'Bajo', 'Pluck', 'Campana', 'Pad'];
+  const fx = { reverb: false, delay: false, filtro: false };
+  function makeInstrument(n) {
+    let i;
+    if (n === 'Synth') i = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'sawtooth' }, envelope: { attack: 0.02, decay: 0.2, sustain: 0.6, release: 0.3 } });
+    else if (n === 'Bajo') i = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'square' }, envelope: { attack: 0.02, decay: 0.2, sustain: 0.7, release: 0.2 } });
+    else if (n === 'Pluck') i = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'triangle' }, envelope: { attack: 0.004, decay: 0.3, sustain: 0.0, release: 0.3 } });
+    else if (n === 'Campana') i = new Tone.PolySynth(Tone.FMSynth, { envelope: { attack: 0.01, decay: 0.4, sustain: 0.1, release: 1.2 } });
+    else i = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'sine' }, envelope: { attack: 0.5, decay: 0.3, sustain: 0.8, release: 1.6 } });
+    i.volume.value = -9; return i;
+  }
+  function buildEngine() {
+    if (engine || typeof Tone === 'undefined') return;
+    const filter = new Tone.Filter({ type: 'lowpass', frequency: 1800, Q: 1 });
+    const delay = new Tone.FeedbackDelay({ delayTime: '8n', feedback: 0.35, wet: 0 });
+    const reverb = new Tone.Reverb({ decay: 2.6, wet: 0 });
+    const out = new Tone.Gain(0.9).toDestination();
+    filter.connect(delay); delay.connect(reverb); reverb.connect(out);
+    const inst = makeInstrument(instrName); inst.connect(filter);
+    engine = { inst, filter, delay, reverb, out }; applyFx();
+  }
+  function setInstrument(n) {
+    instrName = n; if (!engine) { updateStudioUI(); return; }
+    const old = engine.inst, ni = makeInstrument(n); ni.connect(engine.filter); engine.inst = ni;
+    try { old.releaseAll && old.releaseAll(); } catch (_) {} try { old.dispose(); } catch (_) {}
+    for (const s of slots) { s.note = null; s.nm = null; } updateStudioUI();
+  }
+  function applyFx() {
+    if (!engine) return;
+    engine.delay.wet.rampTo(fx.delay ? 0.3 : 0, 0.1);
+    engine.reverb.wet.rampTo(fx.reverb ? 0.45 : 0, 0.1);
+    engine.filter.frequency.rampTo(fx.filtro ? 650 : 1800, 0.1);
+  }
+  function toggleFx(k) { fx[k] = !fx[k]; applyFx(); updateStudioUI(); }
+
+  // --- looper (basado en el reloj del navegador) ---
+  const looper = { rec: false, playing: false, start: 0, len: 4000, lastPos: 0, events: [] };
+  function loopPos() { return looper.playing ? (performance.now() - looper.start) % looper.len : 0; }
+  function loopStart() { looper.playing = true; looper.start = performance.now(); looper.lastPos = 0; for (const e of looper.events) e.fired = false; updateStudioUI(); }
+  function loopStop() { looper.playing = false; looper.rec = false; updateStudioUI(); }
+  function loopClear() { looper.events = []; updateStudioUI(); }
+  function loopToggleRec() { looper.rec = !looper.rec; if (looper.rec && !looper.playing) loopStart(); updateStudioUI(); }
+  function recordEvent(nm, t, dur) { if (looper.rec) looper.events.push({ nm, t, dur: Math.max(0.08, dur), fired: true }); }
+  function loopTick() {
+    if (!looper.playing || !engine) return;
+    const pos = loopPos();
+    if (pos < looper.lastPos) for (const e of looper.events) e.fired = false;
+    for (const e of looper.events) if (!e.fired && pos >= e.t) { e.fired = true; try { engine.inst.triggerAttackRelease(e.nm, e.dur); } catch (_) {} }
+    looper.lastPos = pos;
+  }
+
+  // --- notas en vivo (por "slot" de mano) ---
+  const slots = [{}, {}];
+  function pitchFromY(cy) { const n = scaleNotes(); return n[Math.round(clamp((0.92 - cy) / 0.84, 0, 1) * (n.length - 1))]; }
+  function noteOn(s, midi) { buildEngine(); const nm = noteName(midi); try { engine.inst.triggerAttack(nm); } catch (_) {} s.note = midi; s.nm = nm; s.t0 = performance.now(); s.rt = loopPos(); }
+  function noteOff(s) { if (s.note == null) return; try { engine.inst.triggerRelease(s.nm); } catch (_) {} recordEvent(s.nm, s.rt, (performance.now() - s.t0) / 1000); s.note = null; s.nm = null; }
+  function noteRetune(s, midi) { if (s.note === midi) return; noteOff(s); noteOn(s, midi); }
 
   const META = {
-    instr: ['Instrumento', 'Mueve la mano arriba/abajo para el tono. ✊ puño = silencio, 🤏 pellizco = vibrato. Dos manos: derecha = tono, izquierda = volumen.'],
+    instr: ['Instrumento', 'Pellizca 🤏 en el aire para tocar (altura de la mano = nota). Pellizca los pads para cambiar instrumento, efectos y loops. Dedos arriba (1–5) = cambia de instrumento.'],
     todo: ['Todo junto', 'Muestra manos, cara y cuerpo a la vez — lo que esté en cuadro.'],
     hand: ['Manos', 'Levanta una o dos manos. Prueba gestos: ✋ ✊ ☝️ ✌️ 👍.'],
     face: ['Cara', 'Mira a la cámara: prueba sonreír, abrir la boca o cerrar un ojo.'],
@@ -210,6 +284,7 @@
     stIdle.hidden = s !== 'idle'; stLoading.hidden = s !== 'loading'; stError.hidden = s !== 'error';
     stopBtn.hidden = s !== 'running';
     glassesBtn.hidden = !(s === 'running' && mode === 'face');
+    const st = document.getElementById('studio'); if (st) st.hidden = !(s === 'running' && mode === 'instr');
   }
   function showError(title, steps) {
     $('errTitle').textContent = title;
@@ -294,7 +369,7 @@
     if (rafId) cancelAnimationFrame(rafId), rafId = null;
     if (camStream) camStream.getTracks().forEach(t => t.stop()), camStream = null;
     video.srcObject = null; lastT = -1;
-    setVol(0);
+    studioStop();
     ctx && ctx.clearRect(0, 0, canvas.width, canvas.height);
     setState('idle'); renderDiag();
   }
@@ -324,7 +399,7 @@
     lastT = video.currentTime;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     try {
-      if (mode === 'instr') runInstrument(now);
+      if (mode === 'instr') runStudio(now);
       else if (mode === 'todo') runTodo(now);
       else if (mode === 'hand') runHand(now);
       else if (mode === 'face') runFace(now);
@@ -431,46 +506,98 @@
     if (refs.tBody) refs.tBody.textContent = p.length ? 'Sí' : 'No';
   }
 
-  /* ---------- INSTRUMENTO (theremin con gestos) ---------- */
-  function runInstrument(now) {
+  /* ================= ESTUDIO: UI, interacción y render ================= */
+  let studioButtons = [];
+  function pad(label, action, value) {
+    const b = document.createElement('button'); b.className = 'pad'; b.textContent = label;
+    b.dataset.action = action; b.dataset.value = value; b.onclick = () => activate(action, value);
+    studioButtons.push(b); return b;
+  }
+  function buildStudioUI() {
+    const ib = $('instrBar'), fb = $('fxBar'), lb = $('loopBar');
+    ib.innerHTML = ''; fb.innerHTML = ''; lb.innerHTML = ''; studioButtons = [];
+    INSTR.forEach(n => ib.appendChild(pad(n, 'instr', n)));
+    [['Reverb', 'reverb'], ['Delay', 'delay'], ['Filtro', 'filtro']].forEach(([l, k]) => fb.appendChild(pad(l, 'fx', k)));
+    [['● Rec', 'rec'], ['▶ Loop', 'play'], ['✕ Clear', 'clear']].forEach(([l, v]) => lb.appendChild(pad(l, 'loop', v)));
+    updateStudioUI();
+  }
+  function updateStudioUI() {
+    for (const b of studioButtons) {
+      const a = b.dataset.action, v = b.dataset.value;
+      const on = a === 'instr' ? v === instrName : a === 'fx' ? fx[v] : (v === 'rec' && looper.rec) || (v === 'play' && looper.playing);
+      b.classList.toggle('on', on);
+    }
+  }
+  function activate(action, value) {
+    if (action === 'instr') setInstrument(value);
+    else if (action === 'fx') toggleFx(value);
+    else if (action === 'loop') { if (value === 'rec') loopToggleRec(); else if (value === 'play') looper.playing ? loopStop() : loopStart(); else loopClear(); }
+  }
+  function hitTestButton(cx, cy) {
+    const vp = canvas.getBoundingClientRect();
+    const px = vp.left + cx * vp.width, py = vp.top + cy * vp.height;
+    for (const b of studioButtons) { const r = b.getBoundingClientRect(); if (px >= r.left && px <= r.right && py >= r.top && py <= r.bottom) return b; }
+    return null;
+  }
+  function pinchState(s, lm) { const d = dist(lm[4], lm[8]) / (dist(lm[0], lm[9]) || 1); s.pinch = s.pinch ? d < 0.45 : d < 0.3; return s.pinch; }
+  function fingerSelect(s, f) { if (f >= 1 && f <= 5) { if (s.fc === f) { if (++s.fh === 12) setInstrument(INSTR[f - 1]); } else { s.fc = f; s.fh = 0; } } else s.fh = 0; }
+  function studioStop() { if (engine) { try { engine.inst.releaseAll(); } catch (_) {} } for (const s of slots) { s.note = null; s.nm = null; s.prev = false; } looper.playing = false; looper.rec = false; }
+
+  function runStudio(now) {
+    buildEngine();
     const res = models.hand.recognizeForVideo(video, now);
     const hands = res.landmarks || [];
-    for (const lm of hands) drawHandLm(lm);
-    ensureAudioNodes();
-    if (!hands.length) { setVol(0); updateInstrPanel(null); return; }
-    const withX = hands.map((lm, i) => ({ lm, i, x: 1 - lm[9].x })).sort((a, b) => a.x - b.x);
-    const P = withX[withX.length - 1], V = withX.length >= 2 ? withX[0] : null;
-    const notes = scaleNotes();
-    const idx = Math.round(clamp((0.92 - P.lm[9].y) / 0.84, 0, 1) * (notes.length - 1));
-    const midi = notes[idx];
-    let freq = 440 * Math.pow(2, (midi - 69) / 12);
-    if (isPinch(P.lm)) freq *= 1 + 0.03 * Math.sin(now * 0.02);          // pellizco = vibrato
-    const fist = res.gestures?.[P.i]?.[0]?.categoryName === 'Closed_Fist';
-    let vol = V ? clamp((0.92 - V.lm[9].y) / 0.84, 0, 1) : clamp(countFingers(P.lm) / 5, 0.15, 1);
-    if (fist) vol = 0;                                                    // puño = silencio
-    vol *= 0.5;
-    if (audio) { audio.osc.frequency.rampTo(freq, 0.06); audio.filter.frequency.rampTo(700 + vol * 5000, 0.1); }
-    setVol(vol);
-    drawPitchLadder(notes, idx, P.lm);
-    updateInstrPanel({ midi, vol, ges: gesName(res, P.i) });
-  }
-  function updateInstrPanel(d) {
-    if (!refs.iNote) return;
-    refs.iNote.textContent = d ? noteName(d.midi) : '—';
-    refs.iVol.textContent = d ? Math.round(d.vol / 0.5 * 100) + '%' : '—';
-    if (refs.iGes) refs.iGes.textContent = d ? d.ges : '—';
-  }
-  function drawPitchLadder(notes, idx, hand) {
-    const W = canvas.width, H = canvas.height;
-    for (let i = 0; i < notes.length; i++) {
-      const y = (0.92 - (i / (notes.length - 1)) * 0.84) * H;
-      ctx.strokeStyle = i === idx ? 'rgba(255,122,26,.9)' : 'rgba(236,238,242,.10)';
-      ctx.lineWidth = i === idx ? 2.5 : 1;
-      ctx.beginPath(); ctx.moveTo(W * 0.72, y); ctx.lineTo(W * 0.97, y); ctx.stroke();
+    const arr = hands.map((lm, i) => ({ lm, i, x: 1 - lm[9].x })).sort((a, b) => a.x - b.x);
+    drawScaleGuide();
+    for (let k = 0; k < 2; k++) {
+      const s = slots[k], h = arr[k];
+      if (!h) { if (s.prev && s.note != null) noteOff(s); s.prev = false; s.note = null; s.fingers = null; continue; }
+      drawHandStudio(h.lm);
+      const cx = 1 - h.lm[8].x, cy = h.lm[8].y;
+      const pinch = pinchState(s, h.lm);
+      const over = hitTestButton(cx, cy);
+      drawCursor(h.lm, pinch, over);
+      if (pinch && !s.prev) {
+        if (over) { activate(over.dataset.action, over.dataset.value); s.ui = true; }
+        else { s.ui = false; noteOn(s, pitchFromY(cy)); }
+      } else if (pinch && s.note != null && !s.ui) {
+        noteRetune(s, pitchFromY(cy));
+      } else if (!pinch && s.prev) {
+        if (!s.ui) noteOff(s); s.ui = false; s.fh = 0;
+      }
+      if (!pinch) fingerSelect(s, countFingers(h.lm));
+      s.prev = pinch; s.fingers = countFingers(h.lm); s.ges = gesName(res, h.i);
     }
-    const hx = hand[9].x * W, hy = hand[9].y * H;
-    ctx.fillStyle = 'rgba(255,122,26,.35)'; ctx.beginPath(); ctx.arc(hx, hy, 22, 0, 7); ctx.fill();
-    ctx.fillStyle = '#ff7a1a'; ctx.beginPath(); ctx.arc(hx, hy, 8, 0, 7); ctx.fill();
+    loopTick();
+    updateInstrPanel(arr.length);
+  }
+  function drawHandStudio(lm) {
+    drawUtils.drawConnectors(lm, HandLandmarker.HAND_CONNECTIONS, { color: 'rgba(236,238,242,.5)', lineWidth: 3 });
+    drawUtils.drawLandmarks(lm, { color: 'rgba(255,122,26,.9)', radius: 3 });
+    for (const t of [4, 8, 12, 16, 20]) { ctx.fillStyle = 'rgba(255,210,31,.85)'; ctx.beginPath(); ctx.arc(lm[t].x * canvas.width, lm[t].y * canvas.height, 6, 0, 7); ctx.fill(); }
+  }
+  function drawCursor(lm, pinch, over) {
+    const x = lm[8].x * canvas.width, y = lm[8].y * canvas.height;
+    ctx.save(); ctx.strokeStyle = over ? '#ffd21f' : '#ff7a1a'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(x, y, pinch ? 9 : 16, 0, 7); ctx.stroke();
+    if (pinch) {
+      ctx.fillStyle = 'rgba(255,122,26,.5)'; ctx.beginPath(); ctx.arc(x, y, 9, 0, 7); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,210,31,.9)'; ctx.beginPath(); ctx.moveTo(lm[4].x * canvas.width, lm[4].y * canvas.height); ctx.lineTo(x, y); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  function drawScaleGuide() {
+    const n = scaleNotes(), W = canvas.width, H = canvas.height;
+    ctx.strokeStyle = 'rgba(236,238,242,.06)'; ctx.lineWidth = 1;
+    for (let i = 0; i < n.length; i++) { const y = (0.92 - (i / (n.length - 1)) * 0.84) * H; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W * 0.13, y); ctx.stroke(); }
+  }
+  function updateInstrPanel(nHands) {
+    if (!refs.iInst) return;
+    refs.iInst.textContent = instrName;
+    const playing = slots.filter(s => s.note != null).map(s => s.nm);
+    refs.iNote.textContent = playing.length ? playing.join(' + ') : '—';
+    refs.iLoop.textContent = looper.playing ? (looper.rec ? '● grabando' : '▶ ' + looper.events.length + ' notas') : '—';
+    refs.iFing.textContent = nHands ? slots.slice(0, nHands).map(s => (s.fingers ?? '—')).join(' / ') : '—';
   }
 
   /* ---------- panel ---------- */
@@ -478,11 +605,12 @@
   function buildPanel(m) {
     panelTitle.textContent = META[m][0]; panelHint.textContent = META[m][1];
     if (m === 'instr') {
-      panelBody.innerHTML = `<div class="stats"><div class="stat"><div class="k">Nota</div><div class="v" id="iNote">—</div></div><div class="stat"><div class="k">Volumen</div><div class="v" id="iVol">—</div></div><div class="stat"><div class="k">Gesto</div><div class="v" id="iGes" style="font-size:1rem">—</div></div></div>
+      panelBody.innerHTML = `<div class="stats"><div class="stat"><div class="k">Instrumento</div><div class="v" id="iInst" style="font-size:1.1rem">—</div></div><div class="stat"><div class="k">Nota</div><div class="v" id="iNote" style="font-size:1.1rem">—</div></div><div class="stat"><div class="k">Loop</div><div class="v" id="iLoop" style="font-size:1rem">—</div></div><div class="stat"><div class="k">Dedos</div><div class="v" id="iFing">—</div></div></div>
         <div style="display:flex;gap:10px;align-items:center;margin-top:12px"><label style="color:var(--muted);font-size:.86rem">Escala</label>
         <select id="iScale" style="flex:1;background:var(--surface-2);color:var(--text);border:1px solid var(--line-2);border-radius:8px;padding:7px 9px;font:inherit">${Object.keys(SCALES).map(s => `<option ${s === scaleName ? 'selected' : ''}>${s}</option>`).join('')}</select></div>`;
-      refs.iNote = panelBody.querySelector('#iNote'); refs.iVol = panelBody.querySelector('#iVol'); refs.iGes = panelBody.querySelector('#iGes');
+      refs.iInst = panelBody.querySelector('#iInst'); refs.iNote = panelBody.querySelector('#iNote'); refs.iLoop = panelBody.querySelector('#iLoop'); refs.iFing = panelBody.querySelector('#iFing');
       panelBody.querySelector('#iScale').addEventListener('change', e => { scaleName = e.target.value; });
+      buildStudioUI();
     } else if (m === 'todo') {
       panelBody.innerHTML = `<div class="stats">${stat('Manos')}${stat('Cara')}${stat('Cuerpo')}</div>`;
       const v = panelBody.querySelectorAll('[data-v]'); refs.tHands = v[0]; refs.tFace = v[1]; refs.tBody = v[2];
@@ -505,7 +633,7 @@
   /* ---------- cambiar de módulo ---------- */
   async function switchMode(m) {
     mode = m;
-    if (m !== 'instr') setVol(0);
+    if (m !== 'instr') studioStop();
     document.querySelectorAll('#modeSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === m)));
     buildPanel(m);
     glassesBtn.hidden = !(camStream && m === 'face');
