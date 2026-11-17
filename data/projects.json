@@ -138,6 +138,27 @@
       "role": "Diseño de interacción",
       "thumb": "assets/projects/interfaz-impresora/thumb.png",
       "links": []
+    },
+    {
+      "id": "mundo-360",
+      "order": 7,
+      "published": true,
+      "title": "Mundo 360",
+      "subtitle": "Recorrido inmersivo con la mirada",
+      "cardExcerpt": "Camina entre fotos 360 mirando los portales: mantienes la mirada en un círculo y viajas a la siguiente escena (gaze). Funciona en navegador, celular y cardboard.",
+      "description": "Un ambiente virtual hecho con A-Frame (WebXR): cada escena es una foto 360 equirectangular sobre una esfera. Para transitar de un ambiente a otro se usa gaze interaction — un cursor con 'fuse' que dispara el salto al mantener la mirada ~1,4 s sobre un portal. Se ve con el mouse en el computador, moviendo el teléfono, o en gafas cardboard con el botón VR.",
+      "year": 2026,
+      "tags": [
+        "A-Frame",
+        "WebXR",
+        "360",
+        "Gaze",
+        "VR"
+      ],
+      "role": "Diseño y desarrollo",
+      "thumb": "assets/projects/mundo-360/thumb.svg",
+      "app": "mundo-360/",
+      "links": []
     }
   ]
 }

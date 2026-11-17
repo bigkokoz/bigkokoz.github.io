@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" width="1600" height="1000" role="img" aria-label="Mundo 360">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="75%">
+      <stop offset="0%" stop-color="#13203a"/>
+      <stop offset="55%" stop-color="#0d1426"/>
+      <stop offset="100%" stop-color="#070a14"/>
+    </radialGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4dd0e1"/>
+      <stop offset="100%" stop-color="#ff8a65"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1600" height="1000" fill="url(#bg)"/>
+
+  <!-- esfera 360 (meridianos y paralelos) -->
+  <g transform="translate(800 470)" fill="none" stroke="#4dd0e1" stroke-opacity="0.55" stroke-width="2.5">
+    <circle r="300" stroke-opacity="0.9" stroke-width="3.5"/>
+    <!-- paralelos -->
+    <ellipse rx="300" ry="90"/>
+    <ellipse rx="300" ry="180" stroke-opacity="0.4"/>
+    <ellipse rx="300" ry="270" stroke-opacity="0.25"/>
+    <!-- meridianos -->
+    <ellipse rx="90" ry="300"/>
+    <ellipse rx="180" ry="300" stroke-opacity="0.4"/>
+    <ellipse rx="270" ry="300" stroke-opacity="0.25"/>
+    <line x1="-300" y1="0" x2="300" y2="0" stroke-opacity="0.5"/>
+    <line x1="0" y1="-300" x2="0" y2="300" stroke-opacity="0.5"/>
+  </g>
+
+  <!-- retícula de mirada (gaze) al centro -->
+  <g transform="translate(800 470)">
+    <circle r="34" fill="none" stroke="url(#ring)" stroke-width="7"/>
+    <circle r="7" fill="#eaf6ff"/>
+  </g>
+
+  <!-- hotspots -->
+  <g fill="none" stroke="#ff8a65" stroke-width="5">
+    <circle cx="560" cy="650" r="30"/>
+    <circle cx="1050" cy="640" r="30"/>
+  </g>
+
+  <text x="800" y="880" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-weight="700" font-size="96" letter-spacing="6" fill="#eaf6ff">MUNDO 360</text>
+  <text x="800" y="945" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="34" letter-spacing="3" fill="#8aa0c8">A-FRAME · WEBXR · GAZE</text>
+</svg>

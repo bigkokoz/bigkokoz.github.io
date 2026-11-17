@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Mundo 360 · José</title>
+
+  <!-- A-Frame (WebXR / 360). Se sirve desde CDN, así que necesita internet la primera vez. -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+
+  <style>
+    :root { --nav: 54px; --cyan: #4dd0e1; --orange: #ff8a65; }
+    html, body { margin: 0; padding: 0; background: #0d0f1a; min-height: 100%;
+      font-family: system-ui, sans-serif; color: #ebf0ff; overflow: hidden; }
+    * { box-sizing: border-box; }
+
+    /* NAV (mismo lenguaje visual que los laboratorios hermanos) */
+    #topnav { position: fixed; top: 0; left: 0; right: 0; height: var(--nav); z-index: 30;
+      display: flex; align-items: center; justify-content: space-between; padding: 0 18px;
+      background: rgba(16,20,33,0.92); border-bottom: 1px solid rgba(120,140,190,0.2); }
+    .brand { font-weight: 700; letter-spacing: 0.3px; }
+    .navbtns { display: flex; gap: 8px; align-items: center; }
+    .nav { background: transparent; color: #aab4d4; border: 1px solid transparent; border-radius: 9px;
+      padding: 8px 16px; font-size: 15px; cursor: pointer; text-decoration: none; display: inline-block; }
+    .nav:hover { background: #232c45; }
+    .nav.back { color: #7f8bb0; border-color: rgba(120,140,190,0.25); }
+    .nav.back:hover { color: #cdd6ee; }
+
+    /* ESCENA VR debajo del nav */
+    #vrwrap { position: fixed; top: var(--nav); left: 0; right: 0; bottom: 0; }
+    a-scene { width: 100%; height: 100%; }
+
+    /* Fundido a negro entre escenas */
+    #fade { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none;
+      transition: opacity 0.28s ease; z-index: 10; }
+    #fade.on { opacity: 1; }
+
+    /* Título de la escena actual (centro arriba) */
+    #sceneTag { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); z-index: 12;
+      background: rgba(16,20,33,0.82); border: 1px solid rgba(120,140,190,0.3); border-radius: 999px;
+      padding: 7px 18px; font-size: 15px; font-weight: 600; color: #eaf6ff; pointer-events: none;
+      backdrop-filter: blur(4px); }
+    #sceneTag small { color: var(--cyan); font-weight: 400; }
+
+    /* Panel de ayuda (abajo izquierda) */
+    #help { position: absolute; left: 14px; bottom: 14px; z-index: 12; max-width: 300px;
+      background: rgba(16,20,33,0.82); border: 1px solid rgba(120,140,190,0.3); border-radius: 12px;
+      padding: 12px 14px; font-size: 13px; line-height: 1.55; color: #c7cfe6; backdrop-filter: blur(4px); }
+    #help b { color: #eaf6ff; }
+    #help .k { background: rgba(0,0,0,0.4); padding: 1px 6px; border-radius: 5px; color: #ffe2d4; }
+    #help button { margin-top: 8px; background: transparent; color: #7f8bb0; border: none;
+      font-size: 12px; cursor: pointer; padding: 0; text-decoration: underline; }
+
+    /* Selector de escenas (abajo centro) — atajo con mouse para probar */
+    #dots { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 12;
+      display: flex; gap: 8px; }
+    #dots button { background: rgba(16,20,33,0.82); color: #cdd6ee; border: 1px solid rgba(120,140,190,0.3);
+      border-radius: 10px; padding: 8px 14px; font-size: 13px; cursor: pointer; backdrop-filter: blur(4px); }
+    #dots button.active { background: #0d2b31; border-color: var(--cyan); color: #80deea; }
+    #dots button:hover { border-color: var(--cyan); }
+
+    /* Aviso cuando se usan panoramas de reemplazo */
+    #placeholderNote { position: absolute; right: 14px; bottom: 14px; z-index: 12; max-width: 290px;
+      background: rgba(255,138,101,0.12); border: 1px solid rgba(255,138,101,0.4); color: #ffcbb3;
+      border-radius: 12px; padding: 11px 14px; font-size: 12.5px; line-height: 1.55; backdrop-filter: blur(4px); }
+    #placeholderNote code { background: rgba(0,0,0,0.35); padding: 1px 6px; border-radius: 5px; color: #ffe2d4; }
+    #placeholderNote.hidden { display: none; }
+  </style>
+</head>
+<body>
+  <!-- NAV -->
+  <div id="topnav">
+    <span class="brand">🌐 Mundo 360</span>
+    <div class="navbtns">
+      <a class="nav back" href="../">↩ Proyectos</a>
+    </div>
+  </div>
+
+  <!-- CONTENEDOR VR -->
+  <div id="vrwrap">
+    <div id="sceneTag">Cargando…</div>
+
+    <a-scene embedded vr-mode-ui="enabled: true" loading-screen="dotsColor: #4dd0e1; backgroundColor: #0d0f1a"
+             renderer="colorManagement: true; antialias: true">
+      <!-- Cielo 360: su textura se cambia por JS al viajar de una escena a otra -->
+      <a-sky id="sky" radius="500" color="#10141f"></a-sky>
+
+      <!-- Contenedor de hotspots (se reconstruye en cada escena) -->
+      <a-entity id="hotspots"></a-entity>
+
+      <!-- Cámara fija en el origen (es un visor 360, no hay desplazamiento) -->
+      <a-entity id="cam" camera look-controls="reverseMouseDrag: false" wasd-controls="enabled: false"
+                position="0 1.6 0">
+        <!-- RETÍCULA DE MIRADA (gaze): el cursor con 'fuse' dispara el salto al mantener la mirada -->
+        <a-entity id="reticle"
+                  cursor="fuse: true; fuseTimeout: 1400"
+                  raycaster="objects: .hotspot; far: 100"
+                  position="0 0 -1"
+                  geometry="primitive: ring; radiusInner: 0.012; radiusOuter: 0.02; segmentsTheta: 48"
+                  material="color: #ffffff; shader: flat; opacity: 0.9"
+                  animation__fuse="property: scale; startEvents: fusing; easing: easeInCubic; dur: 1400; from: 1 1 1; to: 0.35 0.35 0.35"
+                  animation__fusecol="property: material.color; type: color; startEvents: fusing; dur: 1400; from: #ffffff; to: #4dd0e1"
+                  animation__leave="property: scale; startEvents: mouseleave; dur: 200; to: 1 1 1"
+                  animation__leavecol="property: material.color; type: color; startEvents: mouseleave; dur: 200; to: #ffffff">
+        </a-entity>
+      </a-entity>
+    </a-scene>
+
+    <!-- Fundido y HUD -->
+    <div id="fade"></div>
+
+    <div id="help">
+      <b>Cómo transitar (gaze):</b> apunta el punto central a un círculo y <b>mantén la mirada ~1,4&nbsp;s</b>
+      para viajar a esa escena.<br>
+      🖱️ En computador: arrastra con el mouse para mirar.<br>
+      📱 En celular: mueve el teléfono (o toca <span class="k">VR</span> para cardboard).
+      <br><button id="hideHelp">ocultar</button>
+    </div>
+
+    <div id="dots"></div>
+
+    <div id="placeholderNote" class="hidden">
+      Estás viendo <b>panoramas de reemplazo</b>. Coloca tus 3 fotos 360 equirectangulares en la carpeta
+      <code>img360/</code> como <code>escena1.jpg</code>, <code>escena2.jpg</code>, <code>escena3.jpg</code>
+      y se usarán automáticamente.
+    </div>
+  </div>
+
+  <script>
+  /* ============================================================
+     CONFIGURACIÓN DE ESCENAS
+     - file:  ruta a tu foto 360 equirectangular (ratio 2:1)
+     - title: nombre que se muestra en la cabecera y en los enlaces
+     Agrega o quita escenas libremente: los hotspots se generan solos
+     (cada escena enlaza con la siguiente y la anterior, en bucle).
+     ============================================================ */
+  const SCENES = [
+    { file: 'img360/escena1.jpg', title: 'Aula WebXR' },
+    { file: 'img360/escena2.jpg', title: 'Mesa de trabajo' },
+    { file: 'img360/escena3.jpg', title: 'Ventanal' },
+  ];
+
+  /* ---- Componente: hacer que un hotspot mire siempre a la cámara ---- */
+  AFRAME.registerComponent('face-camera', {
+    tick: function () {
+      const cam = this.el.sceneEl && this.el.sceneEl.camera;
+      if (!cam) return;
+      const p = new AFRAME.THREE.Vector3();
+      cam.getWorldPosition(p);
+      this.el.object3D.lookAt(p);
+    }
+  });
+
+  /* ---- Componente: comportamiento de un hotspot (hover + salto) ---- */
+  AFRAME.registerComponent('hotspot', {
+    schema: { target: { type: 'int', default: 0 } },
+    init: function () {
+      const el = this.el;
+      const group = el.parentNode;
+      const ring = group.querySelector('.hsRing');
+      const target = this.data.target;
+
+      el.addEventListener('mouseenter', function () {
+        group.setAttribute('scale', '1.18 1.18 1.18');
+        if (ring) ring.setAttribute('material', 'color', '#ff8a65');
+      });
+      el.addEventListener('mouseleave', function () {
+        group.setAttribute('scale', '1 1 1');
+        if (ring) ring.setAttribute('material', 'color', '#4dd0e1');
+      });
+      el.addEventListener('click', function () {
+        Tour.go(target);
+      });
+    }
+  });
+
+  /* ============================================================
+     CONTROLADOR DEL RECORRIDO
+     ============================================================ */
+  const Tour = {
+    current: 0,
+    busy: false,
+    usingPlaceholder: false,
+
+    el: {
+      sky:   null,
+      hot:   null,
+      tag:   null,
+      fade:  null,
+      dots:  null,
+      note:  null,
+    },
+
+    init: function () {
+      this.el.sky  = document.getElementById('sky');
+      this.el.hot  = document.getElementById('hotspots');
+      this.el.tag  = document.getElementById('sceneTag');
+      this.el.fade = document.getElementById('fade');
+      this.el.dots = document.getElementById('dots');
+      this.el.note = document.getElementById('placeholderNote');
+
+      this.buildDots();
+      // Precargar todas las texturas (archivo real o reemplazo) para que los saltos sean instantáneos.
+      SCENES.forEach((s, i) => this.resolve(i, function () {}));
+      this.render(0, false);
+
+      document.getElementById('hideHelp').addEventListener('click', function () {
+        document.getElementById('help').style.display = 'none';
+      });
+    },
+
+    /* Resuelve la textura de una escena: usa el archivo si existe, si no genera un reemplazo. */
+    resolve: function (i, cb) {
+      const s = SCENES[i];
+      if (s._src) { cb(s._src); return; }
+      const img = new Image();
+      img.onload = function () {
+        s._src = s.file; s._real = true; cb(s._src);
+      };
+      img.onerror = () => {
+        s._src = this.placeholder(i); s._real = false;
+        this.usingPlaceholder = true;
+        this.el.note.classList.remove('hidden');
+        cb(s._src);
+      };
+      img.src = s.file;
+    },
+
+    /* Genera un panorama equirectangular de reemplazo (para que el lab funcione sin fotos aún). */
+    placeholder: function (i) {
+      const w = 2048, h = 1024;
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      const g = c.getContext('2d');
+      const hue = [200, 28, 150][i % 3];
+
+      const grd = g.createLinearGradient(0, 0, 0, h);
+      grd.addColorStop(0.0, 'hsl(' + hue + ' 45% 22%)');
+      grd.addColorStop(0.5, 'hsl(' + hue + ' 40% 12%)');
+      grd.addColorStop(1.0, 'hsl(' + hue + ' 30% 6%)');
+      g.fillStyle = grd; g.fillRect(0, 0, w, h);
+
+      // Rejilla (meridianos / paralelos)
+      g.strokeStyle = 'hsla(' + hue + ' 60% 70% / 0.15)'; g.lineWidth = 2;
+      for (let x = 0; x <= w; x += w / 24) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke(); }
+      for (let y = 0; y <= h; y += h / 12) { g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); }
+      // Horizonte
+      g.strokeStyle = 'hsla(' + hue + ' 70% 75% / 0.5)'; g.lineWidth = 4;
+      g.beginPath(); g.moveTo(0, h / 2); g.lineTo(w, h / 2); g.stroke();
+
+      // Texto repetido en 4 direcciones para que se lea en todo el 360
+      g.textAlign = 'center'; g.textBaseline = 'middle';
+      for (let k = 0; k < 4; k++) {
+        const cx = w * (k / 4) + w / 8;
+        g.fillStyle = '#eaf6ff';
+        g.font = 'bold 72px system-ui, sans-serif';
+        g.fillText('ESCENA ' + (i + 1), cx, h / 2 - 72);
+        g.fillStyle = 'hsl(' + hue + ' 70% 78%)';
+        g.font = 'bold 46px system-ui, sans-serif';
+        g.fillText(SCENES[i].title, cx, h / 2 + 8);
+        g.fillStyle = '#aab4d4';
+        g.font = '28px system-ui, sans-serif';
+        g.fillText('Reemplaza con img360/escena' + (i + 1) + '.jpg', cx, h / 2 + 66);
+      }
+      return c.toDataURL('image/jpeg', 0.85);
+    },
+
+    /* Construye los botones-atajo (abajo centro). */
+    buildDots: function () {
+      this.el.dots.innerHTML = '';
+      SCENES.forEach((s, i) => {
+        const b = document.createElement('button');
+        b.textContent = (i + 1) + '. ' + s.title;
+        b.dataset.i = i;
+        b.addEventListener('click', () => this.go(i));
+        this.el.dots.appendChild(b);
+      });
+    },
+
+    /* Reconstruye los hotspots de la escena actual (siguiente / anterior en bucle). */
+    buildHotspots: function (i) {
+      const hot = this.el.hot;
+      while (hot.firstChild) hot.removeChild(hot.firstChild);
+      const n = SCENES.length;
+      if (n < 2) return;
+
+      const next = (i + 1) % n;
+      const prev = (i - 1 + n) % n;
+      // ángulo (º) y etiqueta de cada hotspot; distancia sobre el cielo
+      const links = [
+        { target: next, ang:  35, label: '▶  ' + SCENES[next].title },
+        { target: prev, ang: -35, label: '◀  ' + SCENES[prev].title },
+      ];
+      // Si solo hay 2 escenas, siguiente y anterior son la misma: deja solo una.
+      if (n === 2) links.pop();
+
+      const R = 6, y = -0.4;
+      links.forEach((lk) => {
+        const rad = lk.ang * Math.PI / 180;
+        const x = R * Math.sin(rad);
+        const z = -R * Math.cos(rad);
+
+        const group = document.createElement('a-entity');
+        group.setAttribute('position', x + ' ' + y + ' ' + z);
+        group.setAttribute('face-camera', '');
+
+        // Disco translúcido = objetivo raycast (la clase .hotspot)
+        const disc = document.createElement('a-circle');
+        disc.setAttribute('class', 'hotspot');
+        disc.setAttribute('hotspot', 'target: ' + lk.target);
+        disc.setAttribute('radius', '0.55');
+        disc.setAttribute('material', 'color: #4dd0e1; shader: flat; opacity: 0.25; side: double');
+
+        // Anillo visible
+        const ring = document.createElement('a-ring');
+        ring.setAttribute('class', 'hsRing');
+        ring.setAttribute('radius-inner', '0.5');
+        ring.setAttribute('radius-outer', '0.58');
+        ring.setAttribute('material', 'color: #4dd0e1; shader: flat; opacity: 0.95; side: double');
+
+        // Etiqueta
+        const txt = document.createElement('a-text');
+        txt.setAttribute('class', 'hsLabel');
+        txt.setAttribute('value', lk.label);
+        txt.setAttribute('align', 'center');
+        txt.setAttribute('color', '#eaf6ff');
+        txt.setAttribute('width', '6');
+        txt.setAttribute('position', '0 -0.95 0.01');
+
+        group.appendChild(disc);
+        group.appendChild(ring);
+        group.appendChild(txt);
+        hot.appendChild(group);
+      });
+    },
+
+    /* Pinta una escena (textura + hotspots + HUD). fade controla si hubo fundido. */
+    render: function (i, fade) {
+      this.current = i;
+      this.resolve(i, (src) => {
+        this.el.sky.setAttribute('src', src);
+      });
+      this.buildHotspots(i);
+
+      const s = SCENES[i];
+      this.el.tag.innerHTML = s.title + '  <small>· escena ' + (i + 1) + '/' + SCENES.length + '</small>';
+      Array.prototype.forEach.call(this.el.dots.children, (b) => {
+        b.classList.toggle('active', +b.dataset.i === i);
+      });
+    },
+
+    /* Salta a la escena i con un fundido a negro. */
+    go: function (i) {
+      if (this.busy || i === this.current) return;
+      this.busy = true;
+      const fade = this.el.fade;
+      fade.classList.add('on');
+      setTimeout(() => {
+        this.render(i, true);
+        // pequeño respiro para que la textura se asiente antes de aclarar
+        setTimeout(() => {
+          fade.classList.remove('on');
+          this.busy = false;
+        }, 120);
+      }, 280);
+    },
+  };
+
+  // Arranca cuando A-Frame terminó de montar la escena.
+  const sceneEl = document.querySelector('a-scene');
+  if (sceneEl.hasLoaded) Tour.init();
+  else sceneEl.addEventListener('loaded', () => Tour.init());
+  </script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+Coloca aquí tus 3 fotos 360 EQUIRECTANGULARES (relación de aspecto 2:1, p. ej. 4096x2048):
+
+  escena1.jpg   -> "Aula WebXR"
+  escena2.jpg   -> "Mesa de trabajo"
+  escena3.jpg   -> "Ventanal"
+
+Mientras no estén, laboratorio-vr.html genera panoramas de reemplazo
+automáticamente para que el recorrido funcione igual.
+
+Para cambiar nombres, cantidad o títulos de escenas, edita el arreglo
+SCENES al inicio de la etiqueta <script> en laboratorio-vr.html.
