@@ -339,6 +339,8 @@
       this.current = i;
       this.resolve(i, (src) => {
         this.el.sky.setAttribute('src', src);
+        // color blanco: el material se multiplica por la textura, si no la foto se ve oscura/apagada
+        this.el.sky.setAttribute('color', '#ffffff');
       });
       this.buildHotspots(i);
 
