@@ -10,6 +10,41 @@
   },
   "projects": [
     {
+      "id": "hall-chile-redescubre",
+      "order": 0,
+      "published": true,
+      "featured": true,
+      "title": "Hall · Chile Re-Descubre",
+      "subtitle": "Mundos recorribles en VR, celular y computador",
+      "cardExcerpt": "Un hall con varias escenas: una casa que se transforma con discos, bosques de papel con taller y la villa de Monte Verde con clase recorrida. Se entra con visor Meta Quest o se camina desde el computador y el celular.",
+      "description": "Proyecto de Taller de Diseño de Interfaces (UAI) para el concurso Chile Re-Descubre. Hecho con Three.js y WebXR: la casa se modeló en Blender con luz horneada; los bosques de papel y Monte Verde se generan por código. En VR hay cuerpo, manos, panel de bolsillo y un compañero geométrico (el colihuacho) que guía una clase sobre Monte Verde, con narración que se puede pausar y acelerar.",
+      "year": 2026,
+      "tags": [
+        "Three.js",
+        "WebXR",
+        "VR",
+        "Blender",
+        "Patrimonio"
+      ],
+      "role": "Diseño y desarrollo",
+      "thumb": "assets/projects/hall-chile-redescubre/thumb.jpg",
+      "app": "https://bigkokoz.github.io/chile-redescubre-hall/",
+      "links": [
+        {
+          "label": "Abrir el Hall",
+          "url": "https://bigkokoz.github.io/chile-redescubre-hall/"
+        },
+        {
+          "label": "Entrar directo a Monte Verde",
+          "url": "https://bigkokoz.github.io/chile-redescubre-hall/?escena=monteverde"
+        },
+        {
+          "label": "Código",
+          "url": "https://github.com/bigkokoz/chile-redescubre-hall"
+        }
+      ]
+    },
+    {
       "id": "lampara-sonido",
       "order": 1,
       "published": true,
