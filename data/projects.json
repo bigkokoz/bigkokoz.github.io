@@ -11,13 +11,13 @@
   "projects": [
     {
       "id": "hall-chile-redescubre",
-      "order": 0,
+      "order": 3,
       "published": true,
       "featured": true,
       "title": "Hall · Chile Re-Descubre",
       "subtitle": "Mundos recorribles en VR, celular y computador",
-      "cardExcerpt": "Un hall con varias escenas: una casa que se transforma con discos, bosques de papel con taller y la villa de Monte Verde con clase recorrida. Se entra con visor Meta Quest o se camina desde el computador y el celular.",
-      "description": "Proyecto de Taller de Diseño de Interfaces (UAI) para el concurso Chile Re-Descubre. Hecho con Three.js y WebXR: la casa se modeló en Blender con luz horneada; los bosques de papel y Monte Verde se generan por código. En VR hay cuerpo, manos, panel de bolsillo y un compañero geométrico (el colihuacho) que guía una clase sobre Monte Verde, con narración que se puede pausar y acelerar.",
+      "cardExcerpt": "Un hall con varias escenas: una casa que se transforma con discos, bosques de papel con taller y un viaje en el tiempo a Monte Verde, con clase narrada. Se entra con visor Meta Quest o se camina desde el computador y el celular.",
+      "description": "Proyecto de Taller de Diseño de Interfaces (UAI) para el concurso Chile Re-Descubre. Hecho con Three.js y WebXR: la casa y el valle de Monte Verde se modelaron en Blender con luz horneada; los bosques de papel se generan por código. En VR hay cuerpo, manos, panel de bolsillo y un compañero geométrico (el colihuacho). En Monte Verde tiras la palanca de una máquina del tiempo y viajas a un campamento de hace unos 14.800 años, con una clase narrada que se puede pausar y acelerar.",
       "year": 2026,
       "tags": [
         "Three.js",
@@ -27,7 +27,7 @@
         "Patrimonio"
       ],
       "role": "Diseño y desarrollo",
-      "thumb": "assets/projects/hall-chile-redescubre/thumb.jpg",
+      "thumb": "assets/projects/hall-chile-redescubre/thumb.webp",
       "app": "https://bigkokoz.github.io/chile-redescubre-hall/",
       "links": [
         {
@@ -35,8 +35,8 @@
           "url": "https://bigkokoz.github.io/chile-redescubre-hall/"
         },
         {
-          "label": "Entrar directo a Monte Verde",
-          "url": "https://bigkokoz.github.io/chile-redescubre-hall/?escena=monteverde"
+          "label": "Entrar directo al viaje a Monte Verde",
+          "url": "https://bigkokoz.github.io/chile-redescubre-hall/?escena=viaje"
         },
         {
           "label": "Código",
@@ -69,7 +69,7 @@
     },
     {
       "id": "gesto",
-      "order": 3,
+      "order": 2,
       "published": true,
       "featured": true,
       "title": "GESTO",
@@ -91,7 +91,7 @@
     },
     {
       "id": "controla-flow",
-      "order": 2,
+      "order": 0,
       "published": true,
       "featured": true,
       "title": "CONTROLA FLOW",
